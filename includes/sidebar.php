@@ -1,3 +1,10 @@
+<?php
+$currentPage = basename($_SERVER['PHP_SELF'] ?? '');
+$isDashboardPage = $currentPage === 'index.php';
+$isUsersPage = $currentPage === 'users.php';
+$isTablesMenuOpen = false;
+$isMorePagesMenuOpen = $isUsersPage;
+?>
 			<div id="sidebar" class="sidebar                  responsive                    ace-save-state">
 				<script type="text/javascript">
 					try{ace.settings.loadState('sidebar')}catch(e){}
@@ -34,7 +41,7 @@
 				</div><!-- /.sidebar-shortcuts -->
 
 				<ul class="nav nav-list">
-					<li class="active">
+					<li class="<?php echo $isDashboardPage ? 'active' : ''; ?>">
 						<a href="index.php">
 							<i class="menu-icon fa fa-tachometer"></i>
 							<span class="menu-text"> Dashboard </span>
@@ -43,7 +50,7 @@
 						<b class="arrow"></b>
 					</li>
 
-					<li class="">
+					<li class="<?php echo $isTablesMenuOpen ? 'active open' : ''; ?>">
 						<a href="#" class="dropdown-toggle">
 							<i class="menu-icon fa fa-desktop"></i>
 							<span class="menu-text">
@@ -269,6 +276,15 @@
 
 								<b class="arrow"></b>
 							</li>
+
+							<li class="">
+								<a href="users.php">
+									<i class="menu-icon fa fa-caret-right"></i>
+									Users
+								</a>
+
+								<b class="arrow"></b>
+							</li>
 						</ul>
 					</li>
 
@@ -364,7 +380,7 @@
 						<b class="arrow"></b>
 					</li>
 
-					<li class="">
+					<li class="<?php echo $isMorePagesMenuOpen ? 'active open' : ''; ?>">
 						<a href="#" class="dropdown-toggle">
 							<i class="menu-icon fa fa-tag"></i>
 							<span class="menu-text"> More Pages </span>
@@ -375,6 +391,15 @@
 						<b class="arrow"></b>
 
 						<ul class="submenu">
+							<li class="<?php echo $isUsersPage ? 'active' : ''; ?>">
+								<a href="users.php">
+									<i class="menu-icon fa fa-caret-right"></i>
+									Users
+								</a>
+
+								<b class="arrow"></b>
+							</li>
+
 							<li class="">
 								<a href="profile.html">
 									<i class="menu-icon fa fa-caret-right"></i>

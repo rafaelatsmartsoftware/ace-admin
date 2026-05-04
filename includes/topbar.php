@@ -289,7 +289,7 @@
 
 							<ul class="user-menu dropdown-menu-right dropdown-menu dropdown-yellow dropdown-caret dropdown-close">
 								<li>
-									<a href="auth/logout.php">
+									<a href="#">
 										<i class="ace-icon fa fa-cog"></i>
 										Settings
 									</a>
@@ -305,7 +305,7 @@
 								<li class="divider"></li>
 
 								<li>
-									<a href="#">
+									<a href="auth/logout.php">
 										<i class="ace-icon fa fa-power-off"></i>
 										Logout
 									</a>

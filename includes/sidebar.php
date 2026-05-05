@@ -1,7 +1,7 @@
 <?php
 $currentPage = basename($_SERVER['PHP_SELF'] ?? '');
 $isDashboardPage = $currentPage === 'index.php';
-$isUsersPage = $currentPage === 'users.php';
+$isUsersPage = in_array($currentPage, ['users.php', 'user_form.php'], true);
 $isTablesMenuOpen = false;
 $isMorePagesMenuOpen = $isUsersPage;
 ?>

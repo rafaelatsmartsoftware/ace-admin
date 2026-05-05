@@ -11,6 +11,19 @@ $includeAceExtra = true;
 
 $users = [];
 $databaseError = '';
+$successMessages = [
+	'user_created' => 'User created successfully.',
+	'user_updated' => 'User updated successfully.',
+	'status_updated' => 'User status updated successfully.',
+];
+$errorMessages = [
+	'invalid_request' => 'Invalid request.',
+	'user_not_found' => 'User not found.',
+	'database' => 'Unable to complete the request. Please try again.',
+	'self_deactivate' => 'You cannot deactivate your own account.',
+];
+$successMessage = $successMessages[$_GET['success'] ?? ''] ?? '';
+$errorMessage = $errorMessages[$_GET['error'] ?? ''] ?? '';
 $pdo = ace_admin_db();
 
 if (!$pdo instanceof PDO) {
@@ -67,6 +80,25 @@ require_once __DIR__ . '/includes/topbar.php';
 						<div class="row">
 							<div class="col-xs-12">
 								<!-- PAGE CONTENT BEGINS -->
+<?php if ($successMessage !== ''): ?>
+								<div class="alert alert-success">
+									<i class="ace-icon fa fa-check"></i>
+									<?php echo user_page_escape($successMessage); ?>
+								</div>
+<?php endif; ?>
+<?php if ($errorMessage !== ''): ?>
+								<div class="alert alert-danger">
+									<i class="ace-icon fa fa-exclamation-triangle"></i>
+									<?php echo user_page_escape($errorMessage); ?>
+								</div>
+<?php endif; ?>
+								<div class="clearfix">
+									<a href="user_form.php" class="btn btn-sm btn-primary pull-right">
+										<i class="ace-icon fa fa-plus"></i>
+										Add User
+									</a>
+								</div>
+								<div class="space-6"></div>
 <?php if ($databaseError !== ''): ?>
 								<div class="alert alert-danger">
 									<i class="ace-icon fa fa-exclamation-triangle"></i>
@@ -86,13 +118,14 @@ require_once __DIR__ . '/includes/topbar.php';
 													<i class="ace-icon fa fa-clock-o bigger-110 hidden-480"></i>
 													Created At
 												</th>
+												<th></th>
 											</tr>
 										</thead>
 
 										<tbody>
 <?php if (empty($users)): ?>
 											<tr>
-												<td colspan="6" class="center">
+												<td colspan="7" class="center">
 													No users found.
 												</td>
 											</tr>
@@ -101,9 +134,13 @@ require_once __DIR__ . '/includes/topbar.php';
 <?php
 	$status = (string) ($user['status'] ?? '');
 	$statusClass = $status === 'active' ? 'label-success' : 'label-default';
+	$userId = (int) ($user['id'] ?? 0);
+	$isCurrentUser = $userId === (int) ($_SESSION['user_id'] ?? 0);
+	$nextAction = $status === 'active' ? 'Deactivate' : 'Activate';
+	$nextButtonClass = $status === 'active' ? 'btn-warning' : 'btn-success';
 ?>
 											<tr>
-												<td><?php echo user_page_escape($user['id'] ?? ''); ?></td>
+												<td><?php echo user_page_escape($userId); ?></td>
 												<td><?php echo user_page_escape($user['name'] ?? ''); ?></td>
 												<td><?php echo user_page_escape($user['email'] ?? ''); ?></td>
 												<td><?php echo user_page_escape($user['role'] ?? ''); ?></td>
@@ -113,6 +150,35 @@ require_once __DIR__ . '/includes/topbar.php';
 													</span>
 												</td>
 												<td><?php echo user_page_escape($user['created_at'] ?? ''); ?></td>
+												<td>
+													<div class="hidden-sm hidden-xs btn-group">
+														<a href="user_form.php?id=<?php echo user_page_escape($userId); ?>" class="btn btn-xs btn-info">
+															<i class="ace-icon fa fa-pencil bigger-120"></i>
+														</a>
+
+														<form action="user_toggle_status.php" method="POST" style="display:inline">
+															<input type="hidden" name="id" value="<?php echo user_page_escape($userId); ?>" />
+															<button type="submit" class="btn btn-xs <?php echo $nextButtonClass; ?>"<?php echo ($isCurrentUser && $status === 'active') ? ' disabled="disabled"' : ''; ?>>
+																<i class="ace-icon fa fa-power-off bigger-120"></i>
+																<span class="sr-only"><?php echo user_page_escape($nextAction); ?></span>
+															</button>
+														</form>
+													</div>
+
+													<div class="hidden-md hidden-lg">
+														<a href="user_form.php?id=<?php echo user_page_escape($userId); ?>" class="btn btn-minier btn-info">
+															<i class="ace-icon fa fa-pencil"></i>
+															Edit
+														</a>
+
+														<form action="user_toggle_status.php" method="POST" style="display:inline">
+															<input type="hidden" name="id" value="<?php echo user_page_escape($userId); ?>" />
+															<button type="submit" class="btn btn-minier <?php echo $nextButtonClass; ?>"<?php echo ($isCurrentUser && $status === 'active') ? ' disabled="disabled"' : ''; ?>>
+																<?php echo user_page_escape($nextAction); ?>
+															</button>
+														</form>
+													</div>
+												</td>
 											</tr>
 <?php endforeach; ?>
 <?php endif; ?>

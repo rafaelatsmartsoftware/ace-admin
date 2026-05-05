@@ -1,9 +1,14 @@
 <?php
 $currentPage = basename($_SERVER['PHP_SELF'] ?? '');
 $isDashboardPage = $currentPage === 'index.php';
+$isCompanyProfilePage = $currentPage === 'company_profile.php';
+$isBranchesPage = in_array($currentPage, ['branches.php', 'branch_form.php'], true);
+$isSettingsPage = $currentPage === 'settings.php';
 $isUsersPage = in_array($currentPage, ['users.php', 'user_form.php'], true);
 $isTablesMenuOpen = false;
 $isMorePagesMenuOpen = $isUsersPage;
+$currentSidebarUser = current_user();
+$isAdminUser = ($currentSidebarUser['role'] ?? '') === 'admin';
 ?>
 			<div id="sidebar" class="sidebar                  responsive                    ace-save-state">
 				<script type="text/javascript">
@@ -20,9 +25,9 @@ $isMorePagesMenuOpen = $isUsersPage;
 							<i class="ace-icon fa fa-pencil"></i>
 						</button>
 
-						<button class="btn btn-warning">
+						<a href="users.php" class="btn btn-warning">
 							<i class="ace-icon fa fa-users"></i>
-						</button>
+						</a>
 
 						<button class="btn btn-danger">
 							<i class="ace-icon fa fa-cogs"></i>
@@ -34,7 +39,7 @@ $isMorePagesMenuOpen = $isUsersPage;
 
 						<span class="btn btn-info"></span>
 
-						<span class="btn btn-warning"></span>
+						<a href="users.php" class="btn btn-warning"></a>
 
 						<span class="btn btn-danger"></span>
 					</div>
@@ -49,6 +54,35 @@ $isMorePagesMenuOpen = $isUsersPage;
 
 						<b class="arrow"></b>
 					</li>
+
+					<li class="<?php echo $isCompanyProfilePage ? 'active' : ''; ?>">
+						<a href="company_profile.php">
+							<i class="menu-icon fa fa-building-o"></i>
+							<span class="menu-text"> Company Profile </span>
+						</a>
+
+						<b class="arrow"></b>
+					</li>
+
+					<li class="<?php echo $isBranchesPage ? 'active' : ''; ?>">
+						<a href="branches.php">
+							<i class="menu-icon fa fa-map-marker"></i>
+							<span class="menu-text"> Branches / Outlets </span>
+						</a>
+
+						<b class="arrow"></b>
+					</li>
+
+<?php if ($isAdminUser): ?>
+					<li class="<?php echo $isSettingsPage ? 'active' : ''; ?>">
+						<a href="settings.php">
+							<i class="menu-icon fa fa-cog"></i>
+							<span class="menu-text"> Settings </span>
+						</a>
+
+						<b class="arrow"></b>
+					</li>
+<?php endif; ?>
 
 					<li class="<?php echo $isTablesMenuOpen ? 'active open' : ''; ?>">
 						<a href="#" class="dropdown-toggle">

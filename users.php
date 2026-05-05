@@ -25,15 +25,34 @@ $errorMessages = [
 ];
 $successMessage = $successMessages[$_GET['success'] ?? ''] ?? '';
 $errorMessage = $errorMessages[$_GET['error'] ?? ''] ?? '';
+$searchQuery = trim((string) ($_GET['search'] ?? ''));
 $pdo = ace_admin_db();
 
 if (!$pdo instanceof PDO) {
 	$databaseError = 'Unable to load users right now. Please check the database connection.';
 } else {
 	try {
-		$statement = $pdo->query(
-			'SELECT id, name, email, role, status, created_at FROM users ORDER BY id ASC'
-		);
+		if ($searchQuery !== '') {
+			$statement = $pdo->prepare(
+				'SELECT id, name, email, role, status, created_at
+				FROM users
+				WHERE name LIKE :search_name
+					OR email LIKE :search_email
+					OR role LIKE :search_role
+					OR status LIKE :search_status
+				ORDER BY created_at DESC'
+			);
+			$searchTerm = '%' . $searchQuery . '%';
+			$statement->bindValue(':search_name', $searchTerm, PDO::PARAM_STR);
+			$statement->bindValue(':search_email', $searchTerm, PDO::PARAM_STR);
+			$statement->bindValue(':search_role', $searchTerm, PDO::PARAM_STR);
+			$statement->bindValue(':search_status', $searchTerm, PDO::PARAM_STR);
+			$statement->execute();
+		} else {
+			$statement = $pdo->query(
+				'SELECT id, name, email, role, status, created_at FROM users ORDER BY created_at DESC'
+			);
+		}
 		$users = $statement->fetchAll();
 	} catch (PDOException $exception) {
 		error_log('Users query failed: ' . $exception->getMessage());
@@ -91,6 +110,12 @@ require_once __DIR__ . '/includes/topbar.php';
 								<div class="alert alert-danger">
 									<i class="ace-icon fa fa-exclamation-triangle"></i>
 									<?php echo user_page_escape($errorMessage); ?>
+								</div>
+<?php endif; ?>
+<?php if ($searchQuery !== ''): ?>
+								<div class="alert alert-info">
+									<i class="ace-icon fa fa-search"></i>
+									Search results for: "<?php echo user_page_escape($searchQuery); ?>"
 								</div>
 <?php endif; ?>
 <?php if (can_create_users(current_user())): ?>

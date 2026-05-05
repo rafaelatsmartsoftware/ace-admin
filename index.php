@@ -4,7 +4,7 @@ require_login('login.php');
 require_once __DIR__ . '/config/database.php';
 
 $pageTitle = 'Dashboard - Smart ERP';
-$pageDescription = 'overview & stats';
+$pageDescription = '';
 $bodyClass = 'no-skin';
 $includeAceSkins = true;
 $includeAceExtra = true;
@@ -84,9 +84,9 @@ require_once __DIR__ . '/includes/topbar.php';
 						</ul><!-- /.breadcrumb -->
 
 						<div class="nav-search" id="nav-search">
-							<form class="form-search">
+							<form class="form-search" action="users.php" method="GET">
 								<span class="input-icon">
-									<input type="text" placeholder="Search ..." class="nav-search-input" id="nav-search-input" autocomplete="off" />
+									<input type="text" name="search" placeholder="Search ..." class="nav-search-input" id="nav-search-input" autocomplete="off" />
 									<i class="ace-icon fa fa-search nav-search-icon"></i>
 								</span>
 							</form>
@@ -164,10 +164,6 @@ require_once __DIR__ . '/includes/topbar.php';
 						<div class="page-header">
 							<h1>
 								Dashboard
-								<small>
-									<i class="ace-icon fa fa-angle-double-right"></i>
-									overview &amp; stats
-								</small>
 							</h1>
 						</div><!-- /.page-header -->
 
@@ -377,6 +373,10 @@ require_once __DIR__ . '/includes/topbar.php';
 								</div>
 
 								<div class="hr hr32 hr-dotted"></div>
+
+								<h3 class="header smaller lighter blue">
+									Overview &amp; Stats
+								</h3>
 
 								<div class="alert alert-block alert-success">
 									<button type="button" class="close" data-dismiss="alert">

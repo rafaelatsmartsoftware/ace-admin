@@ -11,3 +11,39 @@ CREATE TABLE IF NOT EXISTS users (
 	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 	updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS company_settings (
+	id INT AUTO_INCREMENT PRIMARY KEY,
+	business_name VARCHAR(150) NULL,
+	logo VARCHAR(255) NULL,
+	phone VARCHAR(50) NULL,
+	email VARCHAR(150) NULL,
+	website VARCHAR(150) NULL,
+	main_address TEXT NULL,
+	description TEXT NULL,
+	facebook_url VARCHAR(255) NULL,
+	instagram_url VARCHAR(255) NULL,
+	opening_note TEXT NULL,
+	status ENUM('active','inactive') DEFAULT 'active',
+	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS branches (
+	id INT AUTO_INCREMENT PRIMARY KEY,
+	branch_name VARCHAR(150) NOT NULL,
+	branch_code VARCHAR(50) NULL,
+	full_address TEXT NOT NULL,
+	area_city VARCHAR(150) NULL,
+	phone VARCHAR(50) NULL,
+	email VARCHAR(150) NULL,
+	google_maps_link VARCHAR(500) NULL,
+	opening_time TIME NULL,
+	closing_time TIME NULL,
+	weekly_off_day VARCHAR(50) NULL,
+	branch_manager VARCHAR(150) NULL,
+	status ENUM('active','inactive') DEFAULT 'active',
+	notes TEXT NULL,
+	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);

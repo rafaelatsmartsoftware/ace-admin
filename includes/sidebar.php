@@ -3,6 +3,7 @@ $currentPage = basename($_SERVER['PHP_SELF'] ?? '');
 $isDashboardPage = $currentPage === 'index.php';
 $isCompanyProfilePage = $currentPage === 'company_profile.php';
 $isBranchesPage = in_array($currentPage, ['branches.php', 'branch_form.php'], true);
+$isServiceCategoriesPage = in_array($currentPage, ['service_categories.php', 'service_category_form.php'], true);
 $isSettingsPage = $currentPage === 'settings.php';
 $isUsersPage = in_array($currentPage, ['users.php', 'user_form.php'], true);
 $isTablesMenuOpen = false;
@@ -68,6 +69,15 @@ $isAdminUser = ($currentSidebarUser['role'] ?? '') === 'admin';
 						<a href="branches.php">
 							<i class="menu-icon fa fa-map-marker"></i>
 							<span class="menu-text"> Outlets </span>
+						</a>
+
+						<b class="arrow"></b>
+					</li>
+
+					<li class="<?php echo $isServiceCategoriesPage ? 'active' : ''; ?>">
+						<a href="service_categories.php">
+							<i class="menu-icon fa fa-list-alt"></i>
+							<span class="menu-text"> Service Categories </span>
 						</a>
 
 						<b class="arrow"></b>

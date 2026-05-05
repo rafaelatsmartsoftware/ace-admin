@@ -21,6 +21,7 @@ $errorMessages = [
 	'user_not_found' => 'User not found.',
 	'database' => 'Unable to complete the request. Please try again.',
 	'self_deactivate' => 'You cannot deactivate your own account.',
+	'permission_denied' => 'You do not have permission to manage that user.',
 ];
 $successMessage = $successMessages[$_GET['success'] ?? ''] ?? '';
 $errorMessage = $errorMessages[$_GET['error'] ?? ''] ?? '';
@@ -92,6 +93,7 @@ require_once __DIR__ . '/includes/topbar.php';
 									<?php echo user_page_escape($errorMessage); ?>
 								</div>
 <?php endif; ?>
+<?php if (can_create_users(current_user())): ?>
 								<div class="clearfix">
 									<a href="user_form.php" class="btn btn-sm btn-primary pull-right">
 										<i class="ace-icon fa fa-plus"></i>
@@ -99,6 +101,7 @@ require_once __DIR__ . '/includes/topbar.php';
 									</a>
 								</div>
 								<div class="space-6"></div>
+<?php endif; ?>
 <?php if ($databaseError !== ''): ?>
 								<div class="alert alert-danger">
 									<i class="ace-icon fa fa-exclamation-triangle"></i>
@@ -135,7 +138,8 @@ require_once __DIR__ . '/includes/topbar.php';
 	$status = (string) ($user['status'] ?? '');
 	$statusClass = $status === 'active' ? 'label-success' : 'label-default';
 	$userId = (int) ($user['id'] ?? 0);
-	$isCurrentUser = $userId === (int) ($_SESSION['user_id'] ?? 0);
+	$canEditUser = can_edit_user(current_user(), $user);
+	$canToggleStatus = can_manage_user_status(current_user(), $user);
 	$nextAction = $status === 'active' ? 'Deactivate' : 'Activate';
 	$nextButtonClass = $status === 'active' ? 'btn-warning' : 'btn-success';
 ?>
@@ -152,31 +156,39 @@ require_once __DIR__ . '/includes/topbar.php';
 												<td><?php echo user_page_escape($user['created_at'] ?? ''); ?></td>
 												<td>
 													<div class="hidden-sm hidden-xs btn-group">
+<?php if ($canEditUser): ?>
 														<a href="user_form.php?id=<?php echo user_page_escape($userId); ?>" class="btn btn-xs btn-info">
 															<i class="ace-icon fa fa-pencil bigger-120"></i>
 														</a>
+<?php endif; ?>
 
+<?php if ($canToggleStatus): ?>
 														<form action="user_toggle_status.php" method="POST" style="display:inline">
 															<input type="hidden" name="id" value="<?php echo user_page_escape($userId); ?>" />
-															<button type="submit" class="btn btn-xs <?php echo $nextButtonClass; ?>"<?php echo ($isCurrentUser && $status === 'active') ? ' disabled="disabled"' : ''; ?>>
+															<button type="submit" class="btn btn-xs <?php echo $nextButtonClass; ?>">
 																<i class="ace-icon fa fa-power-off bigger-120"></i>
 																<span class="sr-only"><?php echo user_page_escape($nextAction); ?></span>
 															</button>
 														</form>
+<?php endif; ?>
 													</div>
 
 													<div class="hidden-md hidden-lg">
+<?php if ($canEditUser): ?>
 														<a href="user_form.php?id=<?php echo user_page_escape($userId); ?>" class="btn btn-minier btn-info">
 															<i class="ace-icon fa fa-pencil"></i>
 															Edit
 														</a>
+<?php endif; ?>
 
+<?php if ($canToggleStatus): ?>
 														<form action="user_toggle_status.php" method="POST" style="display:inline">
 															<input type="hidden" name="id" value="<?php echo user_page_escape($userId); ?>" />
-															<button type="submit" class="btn btn-minier <?php echo $nextButtonClass; ?>"<?php echo ($isCurrentUser && $status === 'active') ? ' disabled="disabled"' : ''; ?>>
+															<button type="submit" class="btn btn-minier <?php echo $nextButtonClass; ?>">
 																<?php echo user_page_escape($nextAction); ?>
 															</button>
 														</form>
+<?php endif; ?>
 													</div>
 												</td>
 											</tr>

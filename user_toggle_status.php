@@ -26,7 +26,7 @@ if (!$pdo instanceof PDO) {
 }
 
 try {
-	$statement = $pdo->prepare('SELECT id, status FROM users WHERE id = :id LIMIT 1');
+	$statement = $pdo->prepare('SELECT id, role, status FROM users WHERE id = :id LIMIT 1');
 	$statement->execute(['id' => $id]);
 	$user = $statement->fetch();
 
@@ -37,8 +37,8 @@ try {
 	$currentStatus = (string) $user['status'];
 	$newStatus = $currentStatus === 'active' ? 'inactive' : 'active';
 
-	if ($id === (int) ($_SESSION['user_id'] ?? 0) && $newStatus === 'inactive') {
-		user_toggle_redirect('error', 'self_deactivate');
+	if (!can_manage_user_status(current_user(), $user)) {
+		user_toggle_redirect('error', 'permission_denied');
 	}
 
 	$update = $pdo->prepare('UPDATE users SET status = :status WHERE id = :id');

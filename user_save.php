@@ -50,10 +50,6 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
 	user_save_form_error('invalid_email', $id);
 }
 
-if ($id > 0 && $id === (int) ($_SESSION['user_id'] ?? 0) && $status === 'inactive') {
-	user_save_form_error('self_deactivate', $id);
-}
-
 $pdo = ace_admin_db();
 
 if (!$pdo instanceof PDO) {
@@ -61,13 +57,30 @@ if (!$pdo instanceof PDO) {
 }
 
 try {
-	if ($id > 0) {
-		$existing = $pdo->prepare('SELECT id FROM users WHERE id = :id LIMIT 1');
-		$existing->execute(['id' => $id]);
+	$existingUser = null;
 
-		if (!$existing->fetch()) {
+	if ($id > 0) {
+		$existing = $pdo->prepare('SELECT id, role, status FROM users WHERE id = :id LIMIT 1');
+		$existing->execute(['id' => $id]);
+		$existingUser = $existing->fetch();
+
+		if (!$existingUser) {
 			user_save_redirect('users.php', 'error', 'user_not_found');
 		}
+
+		if (!can_edit_user(current_user(), $existingUser)) {
+			user_save_redirect('users.php', 'error', 'permission_denied');
+		}
+
+		if ((string) $existingUser['role'] !== $role && !can_create_user_role(current_user(), $role)) {
+			user_save_form_error('permission_denied', $id);
+		}
+
+		if ((string) $existingUser['status'] !== $status && !can_manage_user_status(current_user(), $existingUser)) {
+			user_save_form_error('permission_denied', $id);
+		}
+	} elseif (!can_create_user_role(current_user(), $role)) {
+		user_save_redirect('users.php', 'error', 'permission_denied');
 	}
 
 	$duplicate = $pdo->prepare('SELECT id FROM users WHERE email = :email AND id <> :id LIMIT 1');

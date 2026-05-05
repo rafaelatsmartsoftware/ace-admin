@@ -15,7 +15,7 @@ $user = [
 	'id' => 0,
 	'name' => '',
 	'email' => '',
-	'role' => 'admin',
+	'role' => available_user_roles_for(current_user())[0] ?? 'user',
 	'status' => 'active',
 ];
 $loadError = '';
@@ -26,9 +26,16 @@ $formErrors = [
 	'user_not_found' => 'User not found.',
 	'database' => 'Unable to save the user. Please try again.',
 	'self_deactivate' => 'You cannot deactivate your own account.',
+	'permission_denied' => 'You do not have permission to manage that user.',
 ];
 $formError = $formErrors[$_GET['error'] ?? ''] ?? '';
+$assignableRoles = available_user_roles_for(current_user());
 $pdo = ace_admin_db();
+
+if (!$isEdit && !can_create_users(current_user())) {
+	header('Location: users.php?error=permission_denied');
+	exit;
+}
 
 if (!$pdo instanceof PDO) {
 	$loadError = 'Unable to load the user form right now. Please check the database connection.';
@@ -40,6 +47,9 @@ if (!$pdo instanceof PDO) {
 
 		if (!$loadedUser) {
 			$loadError = 'User not found.';
+		} elseif (!can_edit_user(current_user(), $loadedUser)) {
+			header('Location: users.php?error=permission_denied');
+			exit;
 		} else {
 			$user = $loadedUser;
 		}
@@ -47,6 +57,12 @@ if (!$pdo instanceof PDO) {
 		error_log('User form load failed: ' . $exception->getMessage());
 		$loadError = 'Unable to load the user right now. Please try again later.';
 	}
+}
+
+$roleOptions = $assignableRoles;
+
+if ($isEdit && !in_array((string) ($user['role'] ?? ''), $roleOptions, true)) {
+	$roleOptions[] = (string) ($user['role'] ?? '');
 }
 
 function user_form_escape($value): string
@@ -132,9 +148,9 @@ require_once __DIR__ . '/includes/topbar.php';
 
 										<div class="col-sm-9">
 											<select id="role" name="role" class="col-xs-10 col-sm-5">
-												<option value="admin"<?php echo (($user['role'] ?? '') === 'admin') ? ' selected="selected"' : ''; ?>>admin</option>
-												<option value="manager"<?php echo (($user['role'] ?? '') === 'manager') ? ' selected="selected"' : ''; ?>>manager</option>
-												<option value="user"<?php echo (($user['role'] ?? '') === 'user') ? ' selected="selected"' : ''; ?>>user</option>
+<?php foreach ($roleOptions as $roleOption): ?>
+												<option value="<?php echo user_form_escape($roleOption); ?>"<?php echo (($user['role'] ?? '') === $roleOption) ? ' selected="selected"' : ''; ?>><?php echo user_form_escape($roleOption); ?></option>
+<?php endforeach; ?>
 											</select>
 										</div>
 									</div>

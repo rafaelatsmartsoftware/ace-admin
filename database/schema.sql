@@ -57,3 +57,33 @@ CREATE TABLE IF NOT EXISTS service_categories (
 	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 	updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS services (
+	id INT AUTO_INCREMENT PRIMARY KEY,
+	service_category_id INT NOT NULL,
+	outlet_id INT NOT NULL,
+	service_name VARCHAR(150) NOT NULL,
+	service_slug VARCHAR(180) NOT NULL UNIQUE,
+	description TEXT NULL,
+	duration_minutes INT NOT NULL,
+	price DECIMAL(10,2) NOT NULL,
+	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	INDEX idx_services_category (service_category_id),
+	INDEX idx_services_outlet (outlet_id)
+);
+
+CREATE TABLE IF NOT EXISTS employees (
+	id INT AUTO_INCREMENT PRIMARY KEY,
+	outlet_id INT NOT NULL,
+	employee_name VARCHAR(150) NOT NULL,
+	phone VARCHAR(50) NULL,
+	email VARCHAR(150) NULL,
+	job_title VARCHAR(100) NULL,
+	specialties TEXT NULL,
+	joining_date DATE NULL,
+	notes TEXT NULL,
+	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	INDEX idx_employees_outlet (outlet_id)
+);

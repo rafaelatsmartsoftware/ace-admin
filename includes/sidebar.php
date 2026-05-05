@@ -67,7 +67,7 @@ $isAdminUser = ($currentSidebarUser['role'] ?? '') === 'admin';
 					<li class="<?php echo $isBranchesPage ? 'active' : ''; ?>">
 						<a href="branches.php">
 							<i class="menu-icon fa fa-map-marker"></i>
-							<span class="menu-text"> Branches / Outlets </span>
+							<span class="menu-text"> Outlets </span>
 						</a>
 
 						<b class="arrow"></b>

@@ -184,15 +184,6 @@ require_once __DIR__ . '/includes/topbar.php';
 																<th>Opening Note</th>
 																<td><?php echo nl2br(company_profile_escape(company_profile_value($company, 'opening_note'))); ?></td>
 															</tr>
-															<tr>
-																<th>Status</th>
-																<td>
-<?php $statusClass = ($company['status'] ?? '') === 'active' ? 'label-success' : 'label-default'; ?>
-																	<span class="label label-sm <?php echo $statusClass; ?>">
-																		<?php echo company_profile_escape(company_profile_value($company, 'status')); ?>
-																	</span>
-																</td>
-															</tr>
 														</tbody>
 													</table>
 												</div>

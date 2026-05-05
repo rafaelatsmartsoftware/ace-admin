@@ -6,6 +6,7 @@ $isBranchesPage = in_array($currentPage, ['branches.php', 'branch_form.php'], tr
 $isServiceCategoriesPage = in_array($currentPage, ['service_categories.php', 'service_category_form.php'], true);
 $isServicesPage = in_array($currentPage, ['services.php', 'service_form.php'], true);
 $isEmployeesPage = in_array($currentPage, ['employees.php', 'employee_form.php'], true);
+$isCustomersPage = in_array($currentPage, ['customers.php', 'customer_form.php'], true);
 $isSettingsPage = $currentPage === 'settings.php';
 $isUsersPage = in_array($currentPage, ['users.php', 'user_form.php'], true);
 $isTablesMenuOpen = false;
@@ -98,6 +99,15 @@ $isAdminUser = ($currentSidebarUser['role'] ?? '') === 'admin';
 						<a href="employees.php">
 							<i class="menu-icon fa fa-user-md"></i>
 							<span class="menu-text"> Employees </span>
+						</a>
+
+						<b class="arrow"></b>
+					</li>
+
+					<li class="<?php echo $isCustomersPage ? 'active' : ''; ?>">
+						<a href="customers.php">
+							<i class="menu-icon fa fa-smile-o"></i>
+							<span class="menu-text"> Customers </span>
 						</a>
 
 						<b class="arrow"></b>

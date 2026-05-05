@@ -100,3 +100,27 @@ CREATE TABLE IF NOT EXISTS customers (
 	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 	updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS bookings (
+	id INT AUTO_INCREMENT PRIMARY KEY,
+	booking_type ENUM('registered','guest') NOT NULL DEFAULT 'guest',
+	customer_id INT NULL,
+	guest_name VARCHAR(150) NULL,
+	guest_phone VARCHAR(50) NULL,
+	guest_email VARCHAR(150) NULL,
+	outlet_id INT NOT NULL,
+	service_id INT NOT NULL,
+	employee_id INT NULL,
+	appointment_date DATE NOT NULL,
+	appointment_time TIME NOT NULL,
+	booking_status ENUM('pending','confirmed','completed','cancelled') DEFAULT 'pending',
+	payment_method VARCHAR(50) DEFAULT 'pay_at_salon',
+	notes TEXT NULL,
+	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	INDEX idx_bookings_customer (customer_id),
+	INDEX idx_bookings_outlet (outlet_id),
+	INDEX idx_bookings_service (service_id),
+	INDEX idx_bookings_employee (employee_id),
+	INDEX idx_bookings_appointment_date (appointment_date)
+);

@@ -1,12 +1,68 @@
 <?php
 require_once __DIR__ . '/includes/session.php';
 require_login('login.php');
+require_once __DIR__ . '/config/database.php';
 
 $pageTitle = 'Dashboard - Smart ERP';
 $pageDescription = 'overview & stats';
 $bodyClass = 'no-skin';
 $includeAceSkins = true;
 $includeAceExtra = true;
+$userStats = [
+	'total_users' => 0,
+	'active_users' => 0,
+	'inactive_users' => 0,
+	'admins_count' => 0,
+	'managers_count' => 0,
+	'basic_users_count' => 0,
+];
+$latestUsers = [];
+$recentAccountChanges = [];
+$usersOverviewError = '';
+$recentChangesError = '';
+$pdo = ace_admin_db();
+
+if (!$pdo instanceof PDO) {
+	$usersOverviewError = 'Unable to load users overview right now. Please check the database connection.';
+} else {
+	try {
+		$statsStatement = $pdo->query(
+			"SELECT
+				COUNT(*) AS total_users,
+				COALESCE(SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END), 0) AS active_users,
+				COALESCE(SUM(CASE WHEN status = 'inactive' THEN 1 ELSE 0 END), 0) AS inactive_users,
+				COALESCE(SUM(CASE WHEN role = 'admin' THEN 1 ELSE 0 END), 0) AS admins_count,
+				COALESCE(SUM(CASE WHEN role = 'manager' THEN 1 ELSE 0 END), 0) AS managers_count,
+				COALESCE(SUM(CASE WHEN role = 'user' THEN 1 ELSE 0 END), 0) AS basic_users_count
+			FROM users"
+		);
+		$userStats = array_merge($userStats, $statsStatement->fetch() ?: []);
+
+		$latestStatement = $pdo->query(
+			'SELECT name, email, role, status, created_at FROM users ORDER BY created_at DESC, id DESC LIMIT 5'
+		);
+		$latestUsers = $latestStatement->fetchAll();
+	} catch (PDOException $exception) {
+		error_log('Dashboard users overview failed: ' . $exception->getMessage());
+		$usersOverviewError = 'Unable to load users overview right now. Please try again later.';
+	}
+
+	try {
+		$recentStatement = $pdo->query(
+			'SELECT name, email, role, status, updated_at FROM users ORDER BY updated_at DESC, id DESC LIMIT 5'
+		);
+		$recentAccountChanges = $recentStatement->fetchAll();
+	} catch (PDOException $exception) {
+		error_log('Dashboard recent account changes failed: ' . $exception->getMessage());
+		$recentChangesError = 'Recent account changes are not available right now.';
+	}
+}
+
+function dashboard_escape($value): string
+{
+	return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+}
+
 require_once __DIR__ . '/includes/header.php';
 require_once __DIR__ . '/includes/topbar.php';
 ?>
@@ -118,6 +174,210 @@ require_once __DIR__ . '/includes/topbar.php';
 						<div class="row">
 							<div class="col-xs-12">
 								<!-- PAGE CONTENT BEGINS -->
+								<div class="row">
+									<div class="col-xs-12">
+										<h3 class="header smaller lighter blue">
+											Users Overview
+											<small>
+												<i class="ace-icon fa fa-angle-double-right"></i>
+												live database stats
+											</small>
+										</h3>
+									</div>
+								</div>
+
+<?php if ($usersOverviewError !== ''): ?>
+								<div class="alert alert-danger">
+									<i class="ace-icon fa fa-exclamation-triangle"></i>
+									<?php echo dashboard_escape($usersOverviewError); ?>
+								</div>
+<?php endif; ?>
+
+								<div class="row">
+									<div class="space-6"></div>
+
+									<div class="col-xs-12 infobox-container">
+										<a href="users.php" class="infobox infobox-blue">
+											<div class="infobox-icon">
+												<i class="ace-icon fa fa-users"></i>
+											</div>
+
+											<div class="infobox-data">
+												<span class="infobox-data-number"><?php echo dashboard_escape(number_format((int) $userStats['total_users'])); ?></span>
+												<div class="infobox-content">Total Users</div>
+											</div>
+										</a>
+
+										<a href="users.php" class="infobox infobox-green">
+											<div class="infobox-icon">
+												<i class="ace-icon fa fa-check-circle"></i>
+											</div>
+
+											<div class="infobox-data">
+												<span class="infobox-data-number"><?php echo dashboard_escape(number_format((int) $userStats['active_users'])); ?></span>
+												<div class="infobox-content">Active Users</div>
+											</div>
+										</a>
+
+										<a href="users.php" class="infobox infobox-red">
+											<div class="infobox-icon">
+												<i class="ace-icon fa fa-ban"></i>
+											</div>
+
+											<div class="infobox-data">
+												<span class="infobox-data-number"><?php echo dashboard_escape(number_format((int) $userStats['inactive_users'])); ?></span>
+												<div class="infobox-content">Inactive Users</div>
+											</div>
+										</a>
+
+										<a href="users.php" class="infobox infobox-purple">
+											<div class="infobox-icon">
+												<i class="ace-icon fa fa-user-secret"></i>
+											</div>
+
+											<div class="infobox-data">
+												<span class="infobox-data-number"><?php echo dashboard_escape(number_format((int) $userStats['admins_count'])); ?></span>
+												<div class="infobox-content">Admins</div>
+											</div>
+										</a>
+
+										<a href="users.php" class="infobox infobox-orange2">
+											<div class="infobox-icon">
+												<i class="ace-icon fa fa-briefcase"></i>
+											</div>
+
+											<div class="infobox-data">
+												<span class="infobox-data-number"><?php echo dashboard_escape(number_format((int) $userStats['managers_count'])); ?></span>
+												<div class="infobox-content">Managers</div>
+											</div>
+										</a>
+
+										<a href="users.php" class="infobox infobox-grey">
+											<div class="infobox-icon">
+												<i class="ace-icon fa fa-user"></i>
+											</div>
+
+											<div class="infobox-data">
+												<span class="infobox-data-number"><?php echo dashboard_escape(number_format((int) $userStats['basic_users_count'])); ?></span>
+												<div class="infobox-content">Basic Users</div>
+											</div>
+										</a>
+									</div>
+								</div>
+
+								<div class="space-12"></div>
+
+								<div class="row">
+									<div class="col-sm-6">
+										<div class="widget-box transparent">
+											<div class="widget-header widget-header-flat">
+												<h4 class="widget-title lighter">
+													<i class="ace-icon fa fa-user blue"></i>
+													Latest Users
+												</h4>
+											</div>
+
+											<div class="widget-body">
+												<div class="widget-main no-padding">
+													<table class="table table-bordered table-striped">
+														<thead class="thin-border-bottom">
+															<tr>
+																<th>Name</th>
+																<th>Email</th>
+																<th>Role</th>
+																<th>Status</th>
+																<th>Created At</th>
+															</tr>
+														</thead>
+
+														<tbody>
+<?php if (empty($latestUsers)): ?>
+															<tr>
+																<td colspan="5" class="center">No users found.</td>
+															</tr>
+<?php else: ?>
+<?php foreach ($latestUsers as $latestUser): ?>
+<?php $latestStatusClass = ($latestUser['status'] ?? '') === 'active' ? 'label-success' : 'label-default'; ?>
+															<tr>
+																<td><?php echo dashboard_escape($latestUser['name'] ?? ''); ?></td>
+																<td><?php echo dashboard_escape($latestUser['email'] ?? ''); ?></td>
+																<td><?php echo dashboard_escape($latestUser['role'] ?? ''); ?></td>
+																<td>
+																	<span class="label label-sm <?php echo $latestStatusClass; ?>">
+																		<?php echo dashboard_escape($latestUser['status'] ?? ''); ?>
+																	</span>
+																</td>
+																<td><?php echo dashboard_escape($latestUser['created_at'] ?? ''); ?></td>
+															</tr>
+<?php endforeach; ?>
+<?php endif; ?>
+														</tbody>
+													</table>
+												</div>
+											</div>
+										</div>
+									</div>
+
+									<div class="col-sm-6">
+										<div class="widget-box transparent">
+											<div class="widget-header widget-header-flat">
+												<h4 class="widget-title lighter">
+													<i class="ace-icon fa fa-history orange"></i>
+													Recent Account Changes
+												</h4>
+											</div>
+
+											<div class="widget-body">
+												<div class="widget-main no-padding">
+<?php if ($recentChangesError !== ''): ?>
+													<div class="alert alert-warning no-margin">
+														<i class="ace-icon fa fa-info-circle"></i>
+														<?php echo dashboard_escape($recentChangesError); ?>
+													</div>
+<?php else: ?>
+													<table class="table table-bordered table-striped">
+														<thead class="thin-border-bottom">
+															<tr>
+																<th>Name</th>
+																<th>Email</th>
+																<th>Role</th>
+																<th>Status</th>
+																<th>Updated At</th>
+															</tr>
+														</thead>
+
+														<tbody>
+<?php if (empty($recentAccountChanges)): ?>
+															<tr>
+																<td colspan="5" class="center">No account changes found.</td>
+															</tr>
+<?php else: ?>
+<?php foreach ($recentAccountChanges as $recentUser): ?>
+<?php $recentStatusClass = ($recentUser['status'] ?? '') === 'active' ? 'label-success' : 'label-default'; ?>
+															<tr>
+																<td><?php echo dashboard_escape($recentUser['name'] ?? ''); ?></td>
+																<td><?php echo dashboard_escape($recentUser['email'] ?? ''); ?></td>
+																<td><?php echo dashboard_escape($recentUser['role'] ?? ''); ?></td>
+																<td>
+																	<span class="label label-sm <?php echo $recentStatusClass; ?>">
+																		<?php echo dashboard_escape($recentUser['status'] ?? ''); ?>
+																	</span>
+																</td>
+																<td><?php echo dashboard_escape($recentUser['updated_at'] ?? ''); ?></td>
+															</tr>
+<?php endforeach; ?>
+<?php endif; ?>
+														</tbody>
+													</table>
+<?php endif; ?>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+
+								<div class="hr hr32 hr-dotted"></div>
+
 								<div class="alert alert-block alert-success">
 									<button type="button" class="close" data-dismiss="alert">
 										<i class="ace-icon fa fa-times"></i>

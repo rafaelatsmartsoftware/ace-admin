@@ -15,7 +15,7 @@ $user = [
 	'id' => 0,
 	'name' => '',
 	'email' => '',
-	'role' => available_user_roles_for(current_user())[0] ?? 'user',
+	'role' => available_user_roles_for(current_user())[0] ?? 'manager',
 	'status' => 'active',
 ];
 $loadError = '';
@@ -30,9 +30,12 @@ $formErrors = [
 ];
 $formError = $formErrors[$_GET['error'] ?? ''] ?? '';
 $assignableRoles = available_user_roles_for(current_user());
+$currentUser = current_user();
+$currentRole = $currentUser['role'] ?? '';
+$isManagerSelfEdit = false;
 $pdo = ace_admin_db();
 
-if (!$isEdit && !can_create_users(current_user())) {
+if (!$isEdit && !can_create_users($currentUser)) {
 	header('Location: users.php?error=permission_denied');
 	exit;
 }
@@ -47,11 +50,12 @@ if (!$pdo instanceof PDO) {
 
 		if (!$loadedUser) {
 			$loadError = 'User not found.';
-		} elseif (!can_edit_user(current_user(), $loadedUser)) {
+		} elseif (!can_edit_user($currentUser, $loadedUser)) {
 			header('Location: users.php?error=permission_denied');
 			exit;
 		} else {
 			$user = $loadedUser;
+			$isManagerSelfEdit = $currentRole === 'manager' && (int) ($currentUser['id'] ?? 0) === (int) ($loadedUser['id'] ?? 0);
 		}
 	} catch (PDOException $exception) {
 		error_log('User form load failed: ' . $exception->getMessage());
@@ -59,11 +63,7 @@ if (!$pdo instanceof PDO) {
 	}
 }
 
-$roleOptions = $assignableRoles;
-
-if ($isEdit && !in_array((string) ($user['role'] ?? ''), $roleOptions, true)) {
-	$roleOptions[] = (string) ($user['role'] ?? '');
-}
+$roleOptions = ['admin', 'manager'];
 
 function user_form_escape($value): string
 {
@@ -147,11 +147,16 @@ require_once __DIR__ . '/includes/topbar.php';
 										<label class="col-sm-3 control-label no-padding-right" for="role">Role</label>
 
 										<div class="col-sm-9">
+<?php if ($isManagerSelfEdit): ?>
+											<input type="hidden" name="role" value="<?php echo user_form_escape($user['role'] ?? 'manager'); ?>" />
+											<p class="form-control-static"><?php echo user_form_escape($user['role'] ?? 'manager'); ?></p>
+<?php else: ?>
 											<select id="role" name="role" class="col-xs-10 col-sm-5">
 <?php foreach ($roleOptions as $roleOption): ?>
 												<option value="<?php echo user_form_escape($roleOption); ?>"<?php echo (($user['role'] ?? '') === $roleOption) ? ' selected="selected"' : ''; ?>><?php echo user_form_escape($roleOption); ?></option>
 <?php endforeach; ?>
 											</select>
+<?php endif; ?>
 										</div>
 									</div>
 
@@ -161,10 +166,15 @@ require_once __DIR__ . '/includes/topbar.php';
 										<label class="col-sm-3 control-label no-padding-right" for="status">Status</label>
 
 										<div class="col-sm-9">
+<?php if ($isManagerSelfEdit): ?>
+											<input type="hidden" name="status" value="<?php echo user_form_escape($user['status'] ?? 'active'); ?>" />
+											<p class="form-control-static"><?php echo user_form_escape($user['status'] ?? 'active'); ?></p>
+<?php else: ?>
 											<select id="status" name="status" class="col-xs-10 col-sm-5">
 												<option value="active"<?php echo (($user['status'] ?? '') === 'active') ? ' selected="selected"' : ''; ?>>active</option>
 												<option value="inactive"<?php echo (($user['status'] ?? '') === 'inactive') ? ' selected="selected"' : ''; ?>>inactive</option>
 											</select>
+<?php endif; ?>
 										</div>
 									</div>
 

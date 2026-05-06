@@ -25,9 +25,8 @@ function current_user(): ?array
 function user_role_level(?string $role): int
 {
 	$levels = [
-		'admin' => 3,
-		'manager' => 2,
-		'user' => 1,
+		'admin' => 2,
+		'manager' => 1,
 	];
 
 	return $levels[$role ?? ''] ?? 0;
@@ -38,11 +37,7 @@ function available_user_roles_for(?array $currentUser): array
 	$role = $currentUser['role'] ?? '';
 
 	if ($role === 'admin') {
-		return ['admin', 'manager', 'user'];
-	}
-
-	if ($role === 'manager') {
-		return ['user'];
+		return ['admin', 'manager'];
 	}
 
 	return [];
@@ -78,10 +73,6 @@ function can_edit_user(?array $currentUser, array $targetUser): bool
 	}
 
 	if ($currentRole === 'manager') {
-		return $currentUserId === $targetUserId || $targetRole === 'user';
-	}
-
-	if ($currentRole === 'user') {
 		return $currentUserId === $targetUserId;
 	}
 
@@ -101,7 +92,7 @@ function can_manage_user_status(?array $currentUser, array $targetUser): bool
 		return false;
 	}
 
-	return user_role_level($currentUser['role'] ?? '') > user_role_level($targetUser['role'] ?? '');
+	return ($currentUser['role'] ?? '') === 'admin' && ($targetUser['role'] ?? '') === 'manager';
 }
 
 function require_login(string $redirectTo = 'login.php'): void

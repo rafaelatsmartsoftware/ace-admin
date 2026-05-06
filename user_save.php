@@ -33,8 +33,9 @@ $email = trim($_POST['email'] ?? '');
 $role = trim($_POST['role'] ?? '');
 $status = trim($_POST['status'] ?? '');
 $password = $_POST['password'] ?? '';
-$allowedRoles = ['admin', 'manager', 'user'];
+$allowedRoles = ['admin', 'manager'];
 $allowedStatuses = ['active', 'inactive'];
+$currentUser = current_user();
 
 if (
 	$name === ''
@@ -70,6 +71,11 @@ try {
 
 		if (!can_edit_user(current_user(), $existingUser)) {
 			user_save_redirect('users.php', 'error', 'permission_denied');
+		}
+
+		if (($currentUser['role'] ?? '') === 'manager') {
+			$role = (string) ($existingUser['role'] ?? 'manager');
+			$status = (string) ($existingUser['status'] ?? 'active');
 		}
 
 		if ((string) $existingUser['role'] !== $role && !can_create_user_role(current_user(), $role)) {

@@ -14,7 +14,6 @@ $userStats = [
 	'inactive_users' => 0,
 	'admins_count' => 0,
 	'managers_count' => 0,
-	'basic_users_count' => 0,
 ];
 $latestUsers = [];
 $recentAccountChanges = [];
@@ -32,8 +31,7 @@ if (!$pdo instanceof PDO) {
 				COALESCE(SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END), 0) AS active_users,
 				COALESCE(SUM(CASE WHEN status = 'inactive' THEN 1 ELSE 0 END), 0) AS inactive_users,
 				COALESCE(SUM(CASE WHEN role = 'admin' THEN 1 ELSE 0 END), 0) AS admins_count,
-				COALESCE(SUM(CASE WHEN role = 'manager' THEN 1 ELSE 0 END), 0) AS managers_count,
-				COALESCE(SUM(CASE WHEN role = 'user' THEN 1 ELSE 0 END), 0) AS basic_users_count
+				COALESCE(SUM(CASE WHEN role = 'manager' THEN 1 ELSE 0 END), 0) AS managers_count
 			FROM users"
 		);
 		$userStats = array_merge($userStats, $statsStatement->fetch() ?: []);
@@ -248,18 +246,8 @@ require_once __DIR__ . '/includes/topbar.php';
 											</div>
 										</a>
 
-										<a href="users.php" class="infobox infobox-grey">
-											<div class="infobox-icon">
-												<i class="ace-icon fa fa-user"></i>
-											</div>
-
-											<div class="infobox-data">
-												<span class="infobox-data-number"><?php echo dashboard_escape(number_format((int) $userStats['basic_users_count'])); ?></span>
-												<div class="infobox-content">Basic Users</div>
-											</div>
-										</a>
+										</div>
 									</div>
-								</div>
 
 								<div class="space-12"></div>
 

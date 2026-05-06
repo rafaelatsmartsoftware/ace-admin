@@ -25,31 +25,31 @@ $canViewReports = in_array($currentSidebarUser['role'] ?? '', ['admin', 'manager
 
 				<div class="sidebar-shortcuts" id="sidebar-shortcuts">
 					<div class="sidebar-shortcuts-large" id="sidebar-shortcuts-large">
-						<button class="btn btn-success">
+						<a href="reports.php" class="btn btn-success">
 							<i class="ace-icon fa fa-signal"></i>
-						</button>
+						</a>
 
-						<button class="btn btn-info">
+						<a href="inventory.php" class="btn btn-info">
 							<i class="ace-icon fa fa-pencil"></i>
-						</button>
+						</a>
 
 						<a href="users.php" class="btn btn-warning">
 							<i class="ace-icon fa fa-users"></i>
 						</a>
 
-						<button class="btn btn-danger">
+						<a href="settings.php" class="btn btn-danger">
 							<i class="ace-icon fa fa-cogs"></i>
-						</button>
+						</a>
 					</div>
 
 					<div class="sidebar-shortcuts-mini" id="sidebar-shortcuts-mini">
-						<span class="btn btn-success"></span>
+						<a href="reports.php" class="btn btn-success"></a>
 
-						<span class="btn btn-info"></span>
+						<a href="inventory.php" class="btn btn-info"></a>
 
 						<a href="users.php" class="btn btn-warning"></a>
 
-						<span class="btn btn-danger"></span>
+						<a href="settings.php" class="btn btn-danger"></a>
 					</div>
 				</div><!-- /.sidebar-shortcuts -->
 

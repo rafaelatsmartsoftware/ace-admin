@@ -296,7 +296,7 @@
 								</li>
 
 								<li>
-									<a href="#">
+									<a href="profile.php">
 										<i class="ace-icon fa fa-user"></i>
 										Profile
 									</a>

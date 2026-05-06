@@ -8,6 +8,9 @@ $isServicesPage = in_array($currentPage, ['services.php', 'service_form.php'], t
 $isEmployeesPage = in_array($currentPage, ['employees.php', 'employee_form.php'], true);
 $isCustomersPage = in_array($currentPage, ['customers.php', 'customer_form.php'], true);
 $isBookingsPage = in_array($currentPage, ['bookings.php', 'booking_form.php'], true);
+$isSchedulePage = $currentPage === 'schedule.php';
+$isPaymentsPage = in_array($currentPage, ['payments.php', 'payment_form.php', 'payment_view.php'], true);
+$isInventoryPage = in_array($currentPage, ['inventory.php', 'inventory_form.php'], true);
 $isSettingsPage = $currentPage === 'settings.php';
 $isUsersPage = in_array($currentPage, ['users.php', 'user_form.php'], true);
 $isTablesMenuOpen = false;
@@ -118,6 +121,33 @@ $isAdminUser = ($currentSidebarUser['role'] ?? '') === 'admin';
 						<a href="bookings.php">
 							<i class="menu-icon fa fa-calendar-check-o"></i>
 							<span class="menu-text"> Bookings </span>
+						</a>
+
+						<b class="arrow"></b>
+					</li>
+
+					<li class="<?php echo $isSchedulePage ? 'active' : ''; ?>">
+						<a href="schedule.php">
+							<i class="menu-icon fa fa-calendar"></i>
+							<span class="menu-text"> Schedule </span>
+						</a>
+
+						<b class="arrow"></b>
+					</li>
+
+					<li class="<?php echo $isPaymentsPage ? 'active' : ''; ?>">
+						<a href="payments.php">
+							<i class="menu-icon fa fa-credit-card"></i>
+							<span class="menu-text"> Payments / Invoices </span>
+						</a>
+
+						<b class="arrow"></b>
+					</li>
+
+					<li class="<?php echo $isInventoryPage ? 'active' : ''; ?>">
+						<a href="inventory.php">
+							<i class="menu-icon fa fa-cubes"></i>
+							<span class="menu-text"> Inventory </span>
 						</a>
 
 						<b class="arrow"></b>

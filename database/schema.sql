@@ -124,3 +124,36 @@ CREATE TABLE IF NOT EXISTS bookings (
 	INDEX idx_bookings_employee (employee_id),
 	INDEX idx_bookings_appointment_date (appointment_date)
 );
+
+CREATE TABLE IF NOT EXISTS payments (
+	id INT AUTO_INCREMENT PRIMARY KEY,
+	booking_id INT NOT NULL,
+	invoice_number VARCHAR(100) NOT NULL UNIQUE,
+	total_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+	discount_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+	paid_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+	due_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+	payment_status ENUM('unpaid','partial','paid') DEFAULT 'unpaid',
+	payment_method VARCHAR(50) DEFAULT 'pay_at_salon',
+	payment_date DATE NULL,
+	notes TEXT NULL,
+	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	INDEX idx_payments_booking (booking_id)
+);
+
+CREATE TABLE IF NOT EXISTS inventory_items (
+	id INT AUTO_INCREMENT PRIMARY KEY,
+	outlet_id INT NOT NULL,
+	item_name VARCHAR(150) NOT NULL,
+	item_category VARCHAR(100) NULL,
+	quantity INT NOT NULL DEFAULT 0,
+	unit VARCHAR(50) NULL,
+	item_condition VARCHAR(100) NULL,
+	purchase_date DATE NULL,
+	notes TEXT NULL,
+	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	INDEX idx_inventory_items_outlet (outlet_id),
+	INDEX idx_inventory_items_name (item_name)
+);

@@ -11,12 +11,14 @@ $isBookingsPage = in_array($currentPage, ['bookings.php', 'booking_form.php'], t
 $isSchedulePage = $currentPage === 'schedule.php';
 $isPaymentsPage = in_array($currentPage, ['payments.php', 'payment_form.php', 'payment_view.php'], true);
 $isInventoryPage = in_array($currentPage, ['inventory.php', 'inventory_form.php'], true);
+$isReportsPage = $currentPage === 'reports.php';
 $isSettingsPage = $currentPage === 'settings.php';
 $isUsersPage = in_array($currentPage, ['users.php', 'user_form.php'], true);
 $isTablesMenuOpen = false;
 $isMorePagesMenuOpen = $isUsersPage;
 $currentSidebarUser = current_user();
 $isAdminUser = ($currentSidebarUser['role'] ?? '') === 'admin';
+$canViewReports = in_array($currentSidebarUser['role'] ?? '', ['admin', 'manager'], true);
 ?>
 			<div id="sidebar" class="sidebar                  responsive                    ace-save-state">
 				<script type="text/javascript">
@@ -152,6 +154,17 @@ $isAdminUser = ($currentSidebarUser['role'] ?? '') === 'admin';
 
 						<b class="arrow"></b>
 					</li>
+
+<?php if ($canViewReports): ?>
+					<li class="<?php echo $isReportsPage ? 'active' : ''; ?>">
+						<a href="reports.php">
+							<i class="menu-icon fa fa-bar-chart"></i>
+							<span class="menu-text"> Reports </span>
+						</a>
+
+						<b class="arrow"></b>
+					</li>
+<?php endif; ?>
 
 <?php if ($isAdminUser): ?>
 					<li class="<?php echo $isSettingsPage ? 'active' : ''; ?>">

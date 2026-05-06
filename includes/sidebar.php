@@ -75,7 +75,7 @@ $canViewReports = in_array($currentSidebarUser['role'] ?? '', ['admin', 'manager
 					<li class="<?php echo $isBranchesPage ? 'active' : ''; ?>">
 						<a href="branches.php">
 							<i class="menu-icon fa fa-map-marker"></i>
-							<span class="menu-text"> Outlets </span>
+							<span class="menu-text"> Branches </span>
 						</a>
 
 						<b class="arrow"></b>

@@ -3,7 +3,7 @@ require_once __DIR__ . '/includes/session.php';
 require_login('login.php');
 require_once __DIR__ . '/config/database.php';
 
-$pageTitle = 'Branches / Outlets - Ace Admin';
+$pageTitle = 'Branches - Ace Admin';
 $pageDescription = 'salon and spa locations';
 $bodyClass = 'no-skin';
 $includeAceSkins = true;
@@ -99,14 +99,14 @@ require_once __DIR__ . '/includes/topbar.php';
 								<i class="ace-icon fa fa-home home-icon"></i>
 								<a href="index.php">Home</a>
 							</li>
-							<li class="active">Branches / Outlets</li>
+							<li class="active">Branches</li>
 						</ul><!-- /.breadcrumb -->
 					</div>
 
 					<div class="page-content">
 						<div class="page-header">
 							<h1>
-								Branches / Outlets
+								Branches
 								<small>
 									<i class="ace-icon fa fa-angle-double-right"></i>
 									salon and spa locations
@@ -165,7 +165,7 @@ require_once __DIR__ . '/includes/topbar.php';
 										<thead>
 											<tr>
 												<th>ID</th>
-												<th>Branch / Outlet Name</th>
+												<th>Branch Name</th>
 												<th>Code</th>
 												<th>Area / City</th>
 												<th>Phone</th>

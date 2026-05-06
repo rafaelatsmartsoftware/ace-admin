@@ -95,7 +95,7 @@ require_once __DIR__ . '/includes/topbar.php';
 								<a href="index.php">Home</a>
 							</li>
 							<li>
-								<a href="branches.php">Branches / Outlets</a>
+								<a href="branches.php">Branches</a>
 							</li>
 							<li class="active"><?php echo $isEdit ? 'Edit Branch' : 'Add Branch'; ?></li>
 						</ul><!-- /.breadcrumb -->
@@ -107,7 +107,7 @@ require_once __DIR__ . '/includes/topbar.php';
 								<?php echo $isEdit ? 'Edit Branch' : 'Add Branch'; ?>
 								<small>
 									<i class="ace-icon fa fa-angle-double-right"></i>
-									branches / outlets
+									branches
 								</small>
 							</h1>
 						</div><!-- /.page-header -->
@@ -131,7 +131,7 @@ require_once __DIR__ . '/includes/topbar.php';
 									<input type="hidden" name="id" value="<?php echo branch_form_escape($branch['id'] ?? 0); ?>" />
 
 									<div class="form-group">
-										<label class="col-sm-3 control-label no-padding-right" for="branch_name">Branch / Outlet Name</label>
+										<label class="col-sm-3 control-label no-padding-right" for="branch_name">Branch Name</label>
 
 										<div class="col-sm-9">
 											<input type="text" id="branch_name" name="branch_name" class="col-xs-10 col-sm-5" value="<?php echo branch_form_escape($branch['branch_name'] ?? ''); ?>" />

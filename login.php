@@ -1,3 +1,3 @@
 <?php
-header('Location: modules/admin/login.php');
+header('Location: modules/backend/login.php');
 exit;

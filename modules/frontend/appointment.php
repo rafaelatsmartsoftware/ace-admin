@@ -2,6 +2,55 @@
 $pageTitle = 'Sparlex - Spa Website Template';
 $currentPage = 'appointment.php';
 require_once __DIR__ . '/includes/head.php';
+
+$frontendBranches = get_frontend_branches();
+$frontendServiceCategories = get_frontend_service_categories();
+$frontendServicesByCategory = get_frontend_services_grouped_by_category();
+
+$selectedBranchId = isset($_POST['outlet_id']) ? (int) $_POST['outlet_id'] : 0;
+$selectedCategoryId = isset($_POST['service_category_id']) ? (int) $_POST['service_category_id'] : 0;
+$selectedServiceId = isset($_POST['service_id']) ? (int) $_POST['service_id'] : 0;
+$selectedService = null;
+
+if ($selectedServiceId <= 0 && isset($_GET['service_id'])) {
+	$selectedServiceId = (int) $_GET['service_id'];
+}
+
+if ($selectedServiceId > 0) {
+	$selectedService = get_frontend_service_by_id($selectedServiceId);
+
+	if ($selectedService !== null) {
+		$selectedServiceId = (int) ($selectedService['id'] ?? 0);
+
+		if ($selectedCategoryId <= 0) {
+			$selectedCategoryId = (int) ($selectedService['service_category_id'] ?? 0);
+		}
+	} else {
+		$selectedServiceId = 0;
+	}
+}
+
+$guestName = trim((string) ($_POST['guest_name'] ?? ''));
+$guestPhone = trim((string) ($_POST['guest_phone'] ?? ''));
+$guestEmail = trim((string) ($_POST['guest_email'] ?? ''));
+$appointmentDate = trim((string) ($_POST['appointment_date'] ?? ''));
+$appointmentTime = trim((string) ($_POST['appointment_time'] ?? ''));
+$notes = trim((string) ($_POST['notes'] ?? ''));
+
+$frontendServicesJson = [];
+
+foreach ($frontendServicesByCategory as $categoryId => $services) {
+	$categoryKey = (string) ((int) $categoryId);
+	$frontendServicesJson[$categoryKey] = [];
+
+	foreach ($services as $service) {
+		$frontendServicesJson[$categoryKey][] = [
+			'id' => (int) ($service['id'] ?? 0),
+			'service_name' => (string) ($service['service_name'] ?? ''),
+			'price' => (float) ($service['price'] ?? 0),
+		];
+	}
+}
 ?>
 
         <!-- Spinner Start -->
@@ -49,46 +98,54 @@ require_once __DIR__ . '/includes/head.php';
                                 <input type="hidden" name="payment_method" value="pay_at_salon">
                                 <div class="row gy-3 gx-4">
                                     <div class="col-lg-6">
-                                        <input type="text" name="guest_name" class="form-control py-3 border-white bg-transparent text-white" placeholder="Full Name" required>
+                                        <input type="text" name="guest_name" class="form-control py-3 border-white bg-transparent text-white" placeholder="Full Name" value="<?php echo frontend_escape($guestName); ?>" required>
                                     </div>
                                     <div class="col-lg-6">
-                                        <input type="tel" name="guest_phone" class="form-control py-3 border-white bg-transparent text-white" placeholder="Phone Number" required>
+                                        <input type="tel" name="guest_phone" class="form-control py-3 border-white bg-transparent text-white" placeholder="Phone Number" value="<?php echo frontend_escape($guestPhone); ?>" required>
                                     </div>
                                     <div class="col-lg-6">
-                                        <input type="email" name="guest_email" class="form-control py-3 border-white bg-transparent text-white" placeholder="Email">
+                                        <input type="email" name="guest_email" class="form-control py-3 border-white bg-transparent text-white" placeholder="Email" value="<?php echo frontend_escape($guestEmail); ?>">
                                     </div>
                                     <div class="col-lg-6">
                                         <select name="outlet_id" class="form-select py-3 border-white bg-transparent" aria-label="Select Branch" required>
-                                            <option value="" selected disabled>Select Branch</option>
-                                            <option value="1">Main Branch</option>
-                                            <option value="2">Dhanmondi Branch</option>
-                                            <option value="3">Gulshan Branch</option>
+                                            <option value="" disabled<?php echo $selectedBranchId <= 0 ? ' selected' : ''; ?>>Select Branch</option>
+<?php foreach ($frontendBranches as $branch): ?>
+<?php
+	$branchId = (int) ($branch['id'] ?? 0);
+	$branchName = trim((string) ($branch['branch_name'] ?? ''));
+	$areaCity = trim((string) ($branch['area_city'] ?? ''));
+	$branchLabel = $branchName !== '' ? $branchName : 'Branch';
+
+	if ($areaCity !== '') {
+		$branchLabel .= ' - ' . $areaCity;
+	}
+?>
+                                            <option value="<?php echo frontend_escape((string) $branchId); ?>"<?php echo $selectedBranchId === $branchId ? ' selected' : ''; ?>><?php echo frontend_escape($branchLabel); ?></option>
+<?php endforeach; ?>
                                         </select>
                                     </div>
                                     <div class="col-lg-6">
-                                        <select name="service_id" class="form-select py-3 border-white bg-transparent" aria-label="Select Service" required>
-                                            <option value="" selected disabled>Select Service</option>
-                                            <option value="1">Hair Cut</option>
-                                            <option value="2">Facial Treatment</option>
-                                            <option value="3">Bridal Package</option>
+                                        <select id="service_category_id" name="service_category_id" class="form-select py-3 border-white bg-transparent" aria-label="Select Service Category" required>
+                                            <option value="" disabled<?php echo $selectedCategoryId <= 0 ? ' selected' : ''; ?>>Select Service Category</option>
+<?php foreach ($frontendServiceCategories as $category): ?>
+<?php $categoryId = (int) ($category['id'] ?? 0); ?>
+                                            <option value="<?php echo frontend_escape((string) $categoryId); ?>"<?php echo $selectedCategoryId === $categoryId ? ' selected' : ''; ?>><?php echo frontend_escape((string) ($category['category_name'] ?? '')); ?></option>
+<?php endforeach; ?>
                                         </select>
                                     </div>
                                     <div class="col-lg-6">
-                                        <select name="employee_id" class="form-select py-3 border-white bg-transparent" aria-label="Preferred Employee">
-                                            <option value="" selected>Preferred Employee</option>
-                                            <option value="1">Any Available Employee</option>
-                                            <option value="2">Senior Stylist</option>
-                                            <option value="3">Spa Therapist</option>
+                                        <select id="service_id" name="service_id" class="form-select py-3 border-white bg-transparent" aria-label="Select Service" required data-selected-service-id="<?php echo frontend_escape((string) $selectedServiceId); ?>">
+                                            <option value="" selected disabled><?php echo $selectedCategoryId > 0 ? 'Select Service' : 'Select category first'; ?></option>
                                         </select>
                                     </div>
                                     <div class="col-lg-6">
-                                        <input type="date" name="appointment_date" class="form-control py-3 border-white bg-transparent text-white" required>
+                                        <input type="date" name="appointment_date" class="form-control py-3 border-white bg-transparent text-white" value="<?php echo frontend_escape($appointmentDate); ?>" required>
                                     </div>
                                     <div class="col-lg-6">
-                                        <input type="time" name="appointment_time" class="form-control py-3 border-white bg-transparent text-white" required>
+                                        <input type="time" name="appointment_time" class="form-control py-3 border-white bg-transparent text-white" value="<?php echo frontend_escape($appointmentTime); ?>" required>
                                     </div>
                                     <div class="col-lg-12">
-                                        <textarea class="form-control border-white bg-transparent text-white" name="notes" id="area-text" cols="30" rows="5" placeholder="Special Request / Notes"></textarea>
+                                        <textarea class="form-control border-white bg-transparent text-white" name="notes" id="area-text" cols="30" rows="5" placeholder="Special Request / Notes"><?php echo frontend_escape($notes); ?></textarea>
                                     </div>
                                     <div class="col-lg-12">
                                         <button type="submit" class="btn btn-primary btn-primary-outline-0 w-100 py-3 px-5">BOOK APPOINTMENT</button>
@@ -135,6 +192,59 @@ require_once __DIR__ . '/includes/head.php';
             </div>
         </div>
         <!-- Appointment End -->
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                var categorySelect = document.getElementById('service_category_id');
+                var serviceSelect = document.getElementById('service_id');
+
+                if (!categorySelect || !serviceSelect) {
+                    return;
+                }
+
+                var servicesByCategory = <?php echo json_encode($frontendServicesJson, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT); ?>;
+                var initialServiceId = serviceSelect.getAttribute('data-selected-service-id') || '';
+
+                function formatServiceLabel(service) {
+                    var price = Number(service.price || 0).toFixed(2);
+                    return service.service_name + ' - BDT ' + price;
+                }
+
+                function renderServiceOptions(categoryId, selectedServiceId) {
+                    serviceSelect.innerHTML = '';
+
+                    if (!categoryId) {
+                        serviceSelect.appendChild(new Option('Select category first', '', true, false));
+                        return;
+                    }
+
+                    var services = servicesByCategory[String(categoryId)] || [];
+
+                    if (!services.length) {
+                        serviceSelect.appendChild(new Option('No services available', '', true, false));
+                        return;
+                    }
+
+                    serviceSelect.appendChild(new Option('Select Service', '', selectedServiceId === '', false));
+
+                    services.forEach(function (service) {
+                        var serviceId = String(service.id);
+                        var isSelected = selectedServiceId === serviceId;
+                        serviceSelect.appendChild(new Option(formatServiceLabel(service), serviceId, isSelected, isSelected));
+                    });
+
+                    if (selectedServiceId !== '' && !services.some(function (service) { return String(service.id) === selectedServiceId; })) {
+                        serviceSelect.value = '';
+                    }
+                }
+
+                renderServiceOptions(categorySelect.value, initialServiceId);
+
+                categorySelect.addEventListener('change', function () {
+                    renderServiceOptions(categorySelect.value, '');
+                });
+            });
+        </script>
 
 
 

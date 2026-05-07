@@ -125,6 +125,54 @@ function frontend_default_service_categories(): array
 	return $categories;
 }
 
+function frontend_default_branches(): array
+{
+	return [
+		[
+			'id' => 0,
+			'branch_name' => 'Main Branch',
+			'area_city' => 'Dhaka',
+		],
+	];
+}
+
+function get_frontend_branches(): array
+{
+	static $branches = null;
+
+	if (is_array($branches)) {
+		return $branches;
+	}
+
+	$branches = frontend_default_branches();
+	$pdo = ace_admin_db();
+
+	if (!$pdo instanceof PDO) {
+		return $branches;
+	}
+
+	try {
+		$statement = $pdo->prepare(
+			'SELECT id, branch_name, area_city
+			FROM branches
+			ORDER BY branch_name ASC, id ASC'
+		);
+		$statement->execute();
+		$rows = $statement->fetchAll();
+	} catch (PDOException $exception) {
+		error_log('Frontend branches query failed: ' . $exception->getMessage());
+		return $branches;
+	}
+
+	if (empty($rows)) {
+		return $branches;
+	}
+
+	$branches = $rows;
+
+	return $branches;
+}
+
 function get_frontend_service_categories(): array
 {
 	static $categories = null;
@@ -162,7 +210,7 @@ function get_frontend_service_categories(): array
 	return $categories;
 }
 
-function get_frontend_services_by_category(): array
+function get_frontend_services_grouped_by_category(): array
 {
 	static $servicesByCategory = null;
 
@@ -181,7 +229,7 @@ function get_frontend_services_by_category(): array
 		$statement = $pdo->prepare(
 			'SELECT id, service_name, price, service_category_id
 			FROM services
-			ORDER BY service_category_id ASC, id ASC'
+			ORDER BY service_category_id ASC, service_name ASC, id ASC'
 		);
 		$statement->execute();
 		$rows = $statement->fetchAll();
@@ -210,4 +258,28 @@ function get_frontend_services_by_category(): array
 	}
 
 	return $servicesByCategory;
+}
+
+function get_frontend_services_by_category(): array
+{
+	return get_frontend_services_grouped_by_category();
+}
+
+function get_frontend_service_by_id(int $serviceId): ?array
+{
+	if ($serviceId <= 0) {
+		return null;
+	}
+
+	$servicesByCategory = get_frontend_services_grouped_by_category();
+
+	foreach ($servicesByCategory as $categoryServices) {
+		foreach ($categoryServices as $service) {
+			if ((int) ($service['id'] ?? 0) === $serviceId) {
+				return $service;
+			}
+		}
+	}
+
+	return null;
 }

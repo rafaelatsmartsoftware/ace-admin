@@ -43,30 +43,55 @@ require_once __DIR__ . '/includes/head.php';
                         <div class="appointment-form p-5">
                             <p class="fs-4 text-uppercase text-primary">Get In Touch</p>
                             <h1 class="display-4 mb-4 text-white">Get Appointment</h1>
-                            <form>
+                            <form method="post" action="">
+                                <input type="hidden" name="booking_type" value="guest">
+                                <input type="hidden" name="booking_status" value="pending">
+                                <input type="hidden" name="payment_method" value="pay_at_salon">
                                 <div class="row gy-3 gx-4">
                                     <div class="col-lg-6">
-                                        <input type="text" class="form-control py-3 border-white bg-transparent text-white" placeholder="First Name">
+                                        <input type="text" name="guest_name" class="form-control py-3 border-white bg-transparent text-white" placeholder="Full Name" required>
                                     </div>
                                     <div class="col-lg-6">
-                                        <input type="email" class="form-control py-3 border-white bg-transparent text-white" placeholder="Email">
+                                        <input type="tel" name="guest_phone" class="form-control py-3 border-white bg-transparent text-white" placeholder="Phone Number" required>
                                     </div>
                                     <div class="col-lg-6">
-                                        <select class="form-select py-3 border-white bg-transparent" aria-label="Default select example">
-                                            <option selected>Open this select menu</option>
-                                            <option value="1">One</option>
-                                            <option value="2">Two</option>
-                                            <option value="3">Three</option>
+                                        <input type="email" name="guest_email" class="form-control py-3 border-white bg-transparent text-white" placeholder="Email">
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <select name="outlet_id" class="form-select py-3 border-white bg-transparent" aria-label="Select Branch" required>
+                                            <option value="" selected disabled>Select Branch</option>
+                                            <option value="1">Main Branch</option>
+                                            <option value="2">Dhanmondi Branch</option>
+                                            <option value="3">Gulshan Branch</option>
                                         </select>
                                     </div>
                                     <div class="col-lg-6">
-                                        <input type="date" class="form-control py-3 border-white bg-transparent">
+                                        <select name="service_id" class="form-select py-3 border-white bg-transparent" aria-label="Select Service" required>
+                                            <option value="" selected disabled>Select Service</option>
+                                            <option value="1">Hair Cut</option>
+                                            <option value="2">Facial Treatment</option>
+                                            <option value="3">Bridal Package</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <select name="employee_id" class="form-select py-3 border-white bg-transparent" aria-label="Preferred Employee">
+                                            <option value="" selected>Preferred Employee</option>
+                                            <option value="1">Any Available Employee</option>
+                                            <option value="2">Senior Stylist</option>
+                                            <option value="3">Spa Therapist</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <input type="date" name="appointment_date" class="form-control py-3 border-white bg-transparent text-white" required>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <input type="time" name="appointment_time" class="form-control py-3 border-white bg-transparent text-white" required>
                                     </div>
                                     <div class="col-lg-12">
-                                        <textarea class="form-control border-white bg-transparent text-white" name="text" id="area-text" cols="30" rows="5" placeholder="Write Comments"></textarea>
+                                        <textarea class="form-control border-white bg-transparent text-white" name="notes" id="area-text" cols="30" rows="5" placeholder="Special Request / Notes"></textarea>
                                     </div>
                                     <div class="col-lg-12">
-                                        <button type="button" class="btn btn-primary btn-primary-outline-0 w-100 py-3 px-5">SUBMIT NOW</button>
+                                        <button type="submit" class="btn btn-primary btn-primary-outline-0 w-100 py-3 px-5">BOOK APPOINTMENT</button>
                                     </div>
                                 </div>
                             </form>

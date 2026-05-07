@@ -3,8 +3,10 @@ $pageTitle = 'Sparlex - Spa Website Template';
 $currentPage = 'index.php';
 require_once __DIR__ . '/includes/head.php';
 
-$frontendServiceCategories = array_slice(get_frontend_service_categories(), 0, 8);
-$frontendServicesByCategory = get_frontend_services_by_category();
+$frontendBranches = get_frontend_branches();
+$frontendAllServiceCategories = get_frontend_service_categories();
+$frontendHomepageServiceCategories = array_slice($frontendAllServiceCategories, 0, 8);
+$frontendServicesByCategory = get_frontend_services_grouped_by_category();
 $frontendServiceImages = [
 	'img/services-1.jpg',
 	'img/services-2.jpg',
@@ -16,6 +18,162 @@ $frontendServiceImages = [
 	'img/services-1.jpg',
 ];
 $frontendServiceFallbackText = "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy";
+$homepageAppointmentErrors = [];
+$homepageAppointmentSuccess = isset($_GET['appointment_success']) && $_GET['appointment_success'] === '1';
+$homepageAppointmentAnchor = 'homepage-appointment-form';
+$homepageGuestName = trim((string) ($_POST['guest_name'] ?? ''));
+$homepageGuestPhone = trim((string) ($_POST['guest_phone'] ?? ''));
+$homepageGuestEmail = trim((string) ($_POST['guest_email'] ?? ''));
+$homepageSelectedBranchId = isset($_POST['outlet_id']) ? (int) $_POST['outlet_id'] : 0;
+$homepageSelectedCategoryId = isset($_POST['service_category_id']) ? (int) $_POST['service_category_id'] : 0;
+$homepageSelectedServiceId = isset($_POST['service_id']) ? (int) $_POST['service_id'] : 0;
+$homepageAppointmentDate = trim((string) ($_POST['appointment_date'] ?? ''));
+$homepageAppointmentTime = trim((string) ($_POST['appointment_time'] ?? ''));
+$homepageNotes = trim((string) ($_POST['notes'] ?? ''));
+$homepageServicesJson = [];
+$homepagePdo = ace_admin_db();
+
+foreach ($frontendServicesByCategory as $categoryId => $services) {
+	$categoryKey = (string) ((int) $categoryId);
+	$homepageServicesJson[$categoryKey] = [];
+
+	foreach ($services as $service) {
+		$homepageServicesJson[$categoryKey][] = [
+			'id' => (int) ($service['id'] ?? 0),
+			'service_name' => (string) ($service['service_name'] ?? ''),
+			'price' => (float) ($service['price'] ?? 0),
+		];
+	}
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+	if ($homepageGuestName === '') {
+		$homepageAppointmentErrors[] = 'Full Name is required.';
+	}
+
+	if ($homepageGuestPhone === '') {
+		$homepageAppointmentErrors[] = 'Phone Number is required.';
+	}
+
+	if ($homepageSelectedBranchId <= 0) {
+		$homepageAppointmentErrors[] = 'Please select a branch.';
+	}
+
+	if ($homepageSelectedCategoryId <= 0) {
+		$homepageAppointmentErrors[] = 'Please select a service category.';
+	}
+
+	if ($homepageSelectedServiceId <= 0) {
+		$homepageAppointmentErrors[] = 'Please select a service.';
+	}
+
+	if ($homepageAppointmentDate === '') {
+		$homepageAppointmentErrors[] = 'Appointment Date is required.';
+	}
+
+	if ($homepageAppointmentTime === '') {
+		$homepageAppointmentErrors[] = 'Appointment Time is required.';
+	}
+
+	if ($homepageGuestEmail !== '' && !filter_var($homepageGuestEmail, FILTER_VALIDATE_EMAIL)) {
+		$homepageAppointmentErrors[] = 'Please enter a valid email address.';
+	}
+
+	$today = new DateTimeImmutable('today');
+	$dateObject = DateTimeImmutable::createFromFormat('Y-m-d', $homepageAppointmentDate);
+	$dateErrors = DateTimeImmutable::getLastErrors();
+	$dateWarningCount = is_array($dateErrors) ? (int) ($dateErrors['warning_count'] ?? 0) : 0;
+	$dateErrorCount = is_array($dateErrors) ? (int) ($dateErrors['error_count'] ?? 0) : 0;
+
+	if ($homepageAppointmentDate !== '' && (!$dateObject || $dateWarningCount > 0 || $dateErrorCount > 0)) {
+		$homepageAppointmentErrors[] = 'Please select a valid appointment date.';
+	} elseif ($dateObject instanceof DateTimeImmutable && $dateObject < $today) {
+		$homepageAppointmentErrors[] = 'Appointment date cannot be in the past.';
+	}
+
+	$timeObject = DateTimeImmutable::createFromFormat('H:i', $homepageAppointmentTime);
+	$timeErrors = DateTimeImmutable::getLastErrors();
+	$timeWarningCount = is_array($timeErrors) ? (int) ($timeErrors['warning_count'] ?? 0) : 0;
+	$timeErrorCount = is_array($timeErrors) ? (int) ($timeErrors['error_count'] ?? 0) : 0;
+
+	if ($homepageAppointmentTime !== '' && (!$timeObject || $timeWarningCount > 0 || $timeErrorCount > 0)) {
+		$homepageAppointmentErrors[] = 'Please select a valid appointment time.';
+	}
+
+	if (!$homepagePdo instanceof PDO) {
+		$homepageAppointmentErrors[] = 'Booking is temporarily unavailable. Please try again later.';
+	}
+
+	$validatedHomepageService = null;
+
+	if (empty($homepageAppointmentErrors) && $homepagePdo instanceof PDO) {
+		try {
+			$branchStatement = $homepagePdo->prepare('SELECT id FROM branches WHERE id = :id LIMIT 1');
+			$branchStatement->execute(['id' => $homepageSelectedBranchId]);
+
+			if (!$branchStatement->fetch()) {
+				$homepageAppointmentErrors[] = 'Selected branch is not available.';
+			}
+
+			$categoryStatement = $homepagePdo->prepare('SELECT id FROM service_categories WHERE id = :id LIMIT 1');
+			$categoryStatement->execute(['id' => $homepageSelectedCategoryId]);
+
+			if (!$categoryStatement->fetch()) {
+				$homepageAppointmentErrors[] = 'Selected service category is not available.';
+			}
+
+			$serviceStatement = $homepagePdo->prepare(
+				'SELECT id, service_category_id
+				FROM services
+				WHERE id = :id
+				LIMIT 1'
+			);
+			$serviceStatement->execute(['id' => $homepageSelectedServiceId]);
+			$validatedHomepageService = $serviceStatement->fetch();
+
+			if (!$validatedHomepageService) {
+				$homepageAppointmentErrors[] = 'Selected service is not available.';
+			} elseif ((int) ($validatedHomepageService['service_category_id'] ?? 0) !== $homepageSelectedCategoryId) {
+				$homepageAppointmentErrors[] = 'Selected service does not belong to the chosen category.';
+			}
+		} catch (PDOException $exception) {
+			error_log('Homepage appointment validation failed: ' . $exception->getMessage());
+			$homepageAppointmentErrors[] = 'We could not validate your booking right now. Please try again later.';
+		}
+	}
+
+	if (empty($homepageAppointmentErrors) && $homepagePdo instanceof PDO && is_array($validatedHomepageService)) {
+		try {
+			$insertStatement = $homepagePdo->prepare(
+				'INSERT INTO bookings
+				(booking_type, customer_id, guest_name, guest_phone, guest_email, outlet_id, service_id, employee_id, appointment_date, appointment_time, booking_status, payment_method, notes)
+				VALUES
+				(:booking_type, :customer_id, :guest_name, :guest_phone, :guest_email, :outlet_id, :service_id, :employee_id, :appointment_date, :appointment_time, :booking_status, :payment_method, :notes)'
+			);
+			$insertStatement->execute([
+				'booking_type' => 'guest',
+				'customer_id' => null,
+				'guest_name' => $homepageGuestName,
+				'guest_phone' => $homepageGuestPhone,
+				'guest_email' => $homepageGuestEmail !== '' ? $homepageGuestEmail : null,
+				'outlet_id' => $homepageSelectedBranchId,
+				'service_id' => $homepageSelectedServiceId,
+				'employee_id' => null,
+				'appointment_date' => $homepageAppointmentDate,
+				'appointment_time' => $homepageAppointmentTime,
+				'booking_status' => 'pending',
+				'payment_method' => 'pay_at_salon',
+				'notes' => $homepageNotes !== '' ? $homepageNotes : null,
+			]);
+
+			header('Location: index.php?appointment_success=1#' . $homepageAppointmentAnchor);
+			exit;
+		} catch (PDOException $exception) {
+			error_log('Homepage appointment insert failed: ' . $exception->getMessage());
+			$homepageAppointmentErrors[] = 'We could not submit your appointment right now. Please try again later.';
+		}
+	}
+}
 ?>
 
         <!-- Spinner Start -->
@@ -108,7 +266,7 @@ $frontendServiceFallbackText = "Lorem Ipsum is simply dummy text of the printing
                     <h1 class="display-3">Spa & Beauty Services</h1>
                 </div>
                 <div class="row g-4">
-<?php foreach ($frontendServiceCategories as $categoryIndex => $category): ?>
+<?php foreach ($frontendHomepageServiceCategories as $categoryIndex => $category): ?>
 <?php
 	$categoryId = isset($category['id']) ? (int) ($category['id'] ?? 0) : 0;
 	$isEvenTile = $categoryIndex % 2 === 0;
@@ -161,7 +319,7 @@ $frontendServiceFallbackText = "Lorem Ipsum is simply dummy text of the printing
         </div>
         <!-- Services End -->
 
-<?php foreach ($frontendServiceCategories as $categoryIndex => $category): ?>
+<?php foreach ($frontendHomepageServiceCategories as $categoryIndex => $category): ?>
 <?php
 	$categoryId = isset($category['id']) ? (int) ($category['id'] ?? 0) : 0;
 	$categoryModalId = 'homepage-service-category-modal-' . ($categoryId > 0 ? $categoryId : $categoryIndex + 1);
@@ -276,33 +434,80 @@ $frontendServiceFallbackText = "Lorem Ipsum is simply dummy text of the printing
             <div class="container py-5">
                 <div class="row g-5 align-items-center">
                     <div class="col-lg-6">
-                        <div class="appointment-form p-5">
+                        <div class="appointment-form p-5" id="<?php echo frontend_escape($homepageAppointmentAnchor); ?>">
                             <p class="fs-4 text-uppercase text-primary">Get In Touch</p>
                             <h1 class="display-4 mb-4 text-white">Get Appointment</h1>
-                            <form>
+<?php if ($homepageAppointmentSuccess): ?>
+                            <div class="alert alert-success mb-4" role="alert">
+                                Your appointment request has been submitted successfully. We will contact you soon.
+                            </div>
+<?php endif; ?>
+<?php if (!empty($homepageAppointmentErrors)): ?>
+                            <div class="alert alert-danger mb-4" role="alert">
+                                <ul class="mb-0 ps-3">
+<?php foreach ($homepageAppointmentErrors as $homepageAppointmentError): ?>
+                                    <li><?php echo frontend_escape($homepageAppointmentError); ?></li>
+<?php endforeach; ?>
+                                </ul>
+                            </div>
+<?php endif; ?>
+                            <form method="post" action="">
+                                <input type="hidden" name="booking_type" value="guest">
+                                <input type="hidden" name="booking_status" value="pending">
+                                <input type="hidden" name="payment_method" value="pay_at_salon">
                                 <div class="row gy-3 gx-4">
                                     <div class="col-lg-6">
-                                        <input type="text" class="form-control py-3 border-white bg-transparent text-white" placeholder="First Name">
+                                        <input type="text" name="guest_name" class="form-control py-3 border-white bg-transparent text-white" placeholder="Full Name" value="<?php echo frontend_escape($homepageGuestName); ?>" required>
                                     </div>
                                     <div class="col-lg-6">
-                                        <input type="email" class="form-control py-3 border-white bg-transparent text-white" placeholder="Email">
+                                        <input type="tel" name="guest_phone" class="form-control py-3 border-white bg-transparent text-white" placeholder="Phone Number" value="<?php echo frontend_escape($homepageGuestPhone); ?>" required>
                                     </div>
                                     <div class="col-lg-6">
-                                        <select class="form-select py-3 border-white bg-transparent" aria-label="Default select example">
-                                            <option selected>Open this select menu</option>
-                                            <option value="1">One</option>
-                                            <option value="2">Two</option>
-                                            <option value="3">Three</option>
+                                        <input type="email" name="guest_email" class="form-control py-3 border-white bg-transparent text-white" placeholder="Email" value="<?php echo frontend_escape($homepageGuestEmail); ?>">
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <select name="outlet_id" class="form-select py-3 border-white bg-transparent" aria-label="Select Branch" required>
+                                            <option value="" disabled<?php echo $homepageSelectedBranchId <= 0 ? ' selected' : ''; ?>>Select Branch</option>
+<?php foreach ($frontendBranches as $branch): ?>
+<?php
+	$branchId = (int) ($branch['id'] ?? 0);
+	$branchName = trim((string) ($branch['branch_name'] ?? ''));
+	$areaCity = trim((string) ($branch['area_city'] ?? ''));
+	$branchLabel = $branchName !== '' ? $branchName : 'Branch';
+
+	if ($areaCity !== '') {
+		$branchLabel .= ' - ' . $areaCity;
+	}
+?>
+                                            <option value="<?php echo frontend_escape((string) $branchId); ?>"<?php echo $homepageSelectedBranchId === $branchId ? ' selected' : ''; ?>><?php echo frontend_escape($branchLabel); ?></option>
+<?php endforeach; ?>
                                         </select>
                                     </div>
                                     <div class="col-lg-6">
-                                        <input type="date" class="form-control py-3 border-white bg-transparent">
+                                        <select id="homepage-service-category-id" name="service_category_id" class="form-select py-3 border-white bg-transparent" aria-label="Select Service Category" required>
+                                            <option value="" disabled<?php echo $homepageSelectedCategoryId <= 0 ? ' selected' : ''; ?>>Select Service Category</option>
+<?php foreach ($frontendAllServiceCategories as $category): ?>
+<?php $categoryId = (int) ($category['id'] ?? 0); ?>
+                                            <option value="<?php echo frontend_escape((string) $categoryId); ?>"<?php echo $homepageSelectedCategoryId === $categoryId ? ' selected' : ''; ?>><?php echo frontend_escape((string) ($category['category_name'] ?? '')); ?></option>
+<?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <select id="homepage-service-id" name="service_id" class="form-select py-3 border-white bg-transparent" aria-label="Select Service" required data-selected-service-id="<?php echo frontend_escape((string) $homepageSelectedServiceId); ?>">
+                                            <option value="" selected disabled><?php echo $homepageSelectedCategoryId > 0 ? 'Select Service' : 'Select category first'; ?></option>
+                                        </select>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <input type="date" name="appointment_date" class="form-control py-3 border-white bg-transparent text-white" value="<?php echo frontend_escape($homepageAppointmentDate); ?>" required>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <input type="time" name="appointment_time" class="form-control py-3 border-white bg-transparent text-white" value="<?php echo frontend_escape($homepageAppointmentTime); ?>" required>
                                     </div>
                                     <div class="col-lg-12">
-                                        <textarea class="form-control border-white bg-transparent text-white" name="text" id="area-text" cols="30" rows="5" placeholder="Write Comments"></textarea>
+                                        <textarea class="form-control border-white bg-transparent text-white" name="notes" id="homepage-area-text" cols="30" rows="5" placeholder="Special Request / Notes"><?php echo frontend_escape($homepageNotes); ?></textarea>
                                     </div>
                                     <div class="col-lg-12">
-                                        <button type="button" class="btn btn-primary btn-primary-outline-0 w-100 py-3 px-5">SUBMIT NOW</button>
+                                        <button type="submit" class="btn btn-primary btn-primary-outline-0 w-100 py-3 px-5">BOOK APPOINTMENT</button>
                                     </div>
                                 </div>
                             </form>
@@ -405,6 +610,59 @@ $frontendServiceFallbackText = "Lorem Ipsum is simply dummy text of the printing
             <!-- Counter End -->
         </div>
         <!-- Appointment End -->
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                var categorySelect = document.getElementById('homepage-service-category-id');
+                var serviceSelect = document.getElementById('homepage-service-id');
+
+                if (!categorySelect || !serviceSelect) {
+                    return;
+                }
+
+                var servicesByCategory = <?php echo json_encode($homepageServicesJson, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT); ?>;
+                var initialServiceId = serviceSelect.getAttribute('data-selected-service-id') || '';
+
+                function formatServiceLabel(service) {
+                    var price = Number(service.price || 0).toFixed(2);
+                    return service.service_name + ' - BDT ' + price;
+                }
+
+                function renderServiceOptions(categoryId, selectedServiceId) {
+                    serviceSelect.innerHTML = '';
+
+                    if (!categoryId) {
+                        serviceSelect.appendChild(new Option('Select category first', '', true, false));
+                        return;
+                    }
+
+                    var services = servicesByCategory[String(categoryId)] || [];
+
+                    if (!services.length) {
+                        serviceSelect.appendChild(new Option('No services available', '', true, false));
+                        return;
+                    }
+
+                    serviceSelect.appendChild(new Option('Select Service', '', selectedServiceId === '', false));
+
+                    services.forEach(function (service) {
+                        var serviceId = String(service.id);
+                        var isSelected = selectedServiceId === serviceId;
+                        serviceSelect.appendChild(new Option(formatServiceLabel(service), serviceId, isSelected, isSelected));
+                    });
+
+                    if (selectedServiceId !== '' && !services.some(function (service) { return String(service.id) === selectedServiceId; })) {
+                        serviceSelect.value = '';
+                    }
+                }
+
+                renderServiceOptions(categorySelect.value, initialServiceId);
+
+                categorySelect.addEventListener('change', function () {
+                    renderServiceOptions(categorySelect.value, '');
+                });
+            });
+        </script>
 
 
         <!-- Gallery Start -->

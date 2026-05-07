@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/frontend_data.php';
+
 $currentPage = $currentPage ?? basename($_SERVER['PHP_SELF'] ?? 'index.php');
 $pagesDropdown = ['team.php', 'testimonial.php', 'gallery.php', 'appointment.php', '404.php'];
 $isPagesActive = in_array($currentPage, $pagesDropdown, true);
@@ -11,7 +13,7 @@ function frontend_nav_active(string $page, string $currentPage): string
                 <div class="container px-0">
                     <nav class="navbar navbar-light navbar-expand-xl">
                         <a href="index.php" class="navbar-brand">
-                            <h1 class="text-primary display-4">Sparlex</h1>
+                            <h1 class="text-primary display-4"><?php echo frontend_company_field('business_name'); ?></h1>
                         </a>
                         <button class="navbar-toggler py-2 px-3" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse">
                             <span class="fa fa-bars text-primary"></span>

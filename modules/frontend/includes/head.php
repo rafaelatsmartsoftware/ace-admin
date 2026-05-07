@@ -1,9 +1,19 @@
+<?php
+require_once __DIR__ . '/frontend_data.php';
+
+$frontendBusinessName = frontend_company_value('business_name');
+$frontendPageTitle = $pageTitle ?? $frontendBusinessName;
+
+if ($frontendPageTitle === 'Sparlex - Spa Website Template') {
+	$frontendPageTitle = $frontendBusinessName;
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 
     <head>
         <meta charset="utf-8">
-        <title><?php echo htmlspecialchars($pageTitle ?? 'Sparlex - Spa Website Template', ENT_QUOTES, 'UTF-8'); ?></title>
+        <title><?php echo frontend_escape($frontendPageTitle); ?></title>
         <meta content="width=device-width, initial-scale=1.0" name="viewport">
         <meta content="" name="keywords">
         <meta content="" name="description">

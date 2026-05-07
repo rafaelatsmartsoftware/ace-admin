@@ -1,0 +1,98 @@
+<?php
+require_once __DIR__ . '/../../../config/database.php';
+
+function frontend_company_defaults(): array
+{
+	return [
+		'business_name' => 'Sparlex',
+		'logo' => '',
+		'phone' => '+01234567890',
+		'email' => 'Example@gmail.com',
+		'website' => '#',
+		'main_address' => 'Find A Location',
+		'description' => 'Dolor amet sit justo amet elitr clita ipsum elitr est.Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam in tempor dui, non consectetur enim.',
+		'facebook_url' => '#',
+		'instagram_url' => '#',
+		'opening_note' => 'Monday: 09:00 am - 10:00 pm',
+		'status' => 'active',
+	];
+}
+
+function frontend_company_data(): array
+{
+	static $company = null;
+
+	if (is_array($company)) {
+		return $company;
+	}
+
+	$company = frontend_company_defaults();
+	$pdo = ace_admin_db();
+
+	if (!$pdo instanceof PDO) {
+		return $company;
+	}
+
+	try {
+		$statement = $pdo->query(
+			"SELECT business_name, logo, phone, email, website, main_address, description, facebook_url, instagram_url, opening_note, status
+			 FROM company_settings
+			 ORDER BY CASE WHEN status = 'active' THEN 0 ELSE 1 END, id ASC
+			 LIMIT 1"
+		);
+		$row = $statement->fetch();
+	} catch (PDOException $exception) {
+		error_log('Frontend company settings query failed: ' . $exception->getMessage());
+		return $company;
+	}
+
+	if (!$row) {
+		return $company;
+	}
+
+	foreach ($company as $field => $fallback) {
+		if (array_key_exists($field, $row) && trim((string) $row[$field]) !== '') {
+			$company[$field] = trim((string) $row[$field]);
+		}
+	}
+
+	return $company;
+}
+
+function frontend_company_value(string $field): string
+{
+	$company = frontend_company_data();
+
+	return (string) ($company[$field] ?? '');
+}
+
+function frontend_escape(string $value): string
+{
+	return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+}
+
+function frontend_company_field(string $field): string
+{
+	return frontend_escape(frontend_company_value($field));
+}
+
+function frontend_company_url(string $field): string
+{
+	$url = frontend_company_value($field);
+
+	if ($url === '#' || $url === '') {
+		return '#';
+	}
+
+	if (!filter_var($url, FILTER_VALIDATE_URL)) {
+		return '#';
+	}
+
+	$scheme = strtolower((string) parse_url($url, PHP_URL_SCHEME));
+
+	if (!in_array($scheme, ['http', 'https'], true)) {
+		return '#';
+	}
+
+	return frontend_escape($url);
+}

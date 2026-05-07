@@ -96,3 +96,68 @@ function frontend_company_url(string $field): string
 
 	return frontend_escape($url);
 }
+
+function frontend_default_service_categories(): array
+{
+	$categoryNames = [
+		'Skin Care',
+		'Face Masking',
+		'Stream Bath',
+		'Facial Therapy',
+		'Body Massage',
+		'Aroma Therapy',
+		'Mineral Baths',
+		'Stone Therapy',
+	];
+
+	$categories = [];
+
+	foreach ($categoryNames as $index => $categoryName) {
+		$categories[] = [
+			'id' => 0,
+			'category_name' => $categoryName,
+			'category_slug' => '',
+			'description' => '',
+			'display_order' => $index + 1,
+		];
+	}
+
+	return $categories;
+}
+
+function get_frontend_service_categories(): array
+{
+	static $categories = null;
+
+	if (is_array($categories)) {
+		return $categories;
+	}
+
+	$categories = frontend_default_service_categories();
+	$pdo = ace_admin_db();
+
+	if (!$pdo instanceof PDO) {
+		return $categories;
+	}
+
+	try {
+		$statement = $pdo->prepare(
+			'SELECT id, category_name, category_slug, description, display_order
+			FROM service_categories
+			ORDER BY display_order ASC, id ASC'
+		);
+		$statement->execute();
+		$rows = $statement->fetchAll();
+	} catch (PDOException $exception) {
+		error_log('Frontend service categories query failed: ' . $exception->getMessage());
+		return $categories;
+	}
+
+	if (empty($rows)) {
+		return $categories;
+	}
+
+	$categories = $rows;
+
+	return $categories;
+}

@@ -15,6 +15,7 @@ $databaseError = '';
 $successMessages = [
 	'category_created' => 'Service category created successfully.',
 	'category_updated' => 'Service category updated successfully.',
+	'category_deleted' => 'Service category deleted successfully.',
 ];
 $errorMessages = [
 	'invalid_request' => 'Invalid request.',
@@ -22,6 +23,7 @@ $errorMessages = [
 	'database' => 'Unable to complete the request. Please try again.',
 	'duplicate_slug' => 'That category slug is already in use.',
 	'permission_denied' => 'You do not have permission to manage service categories.',
+	'category_has_services' => 'Cannot delete this category because services are assigned to it.',
 ];
 $successMessage = $successMessages[$_GET['success'] ?? ''] ?? '';
 $errorMessage = $errorMessages[$_GET['error'] ?? ''] ?? '';
@@ -223,6 +225,12 @@ require_once __DIR__ . '/includes/topbar.php';
 													<a href="service_category_form.php?id=<?php echo service_categories_escape($categoryId); ?>" class="btn btn-xs btn-info">
 														<i class="ace-icon fa fa-pencil bigger-120"></i>
 													</a>
+													<form action="service_category_delete.php" method="POST" style="display:inline" onsubmit="return confirm('Delete this service category permanently?');">
+														<input type="hidden" name="id" value="<?php echo service_categories_escape($categoryId); ?>" />
+														<button type="submit" class="btn btn-xs btn-danger">
+															<i class="ace-icon fa fa-trash-o bigger-120"></i>
+														</button>
+													</form>
 <?php else: ?>
 													<span class="text-muted">View only</span>
 <?php endif; ?>

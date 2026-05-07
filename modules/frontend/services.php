@@ -18,6 +18,20 @@ require_once __DIR__ . '/includes/head.php';
 
 <?php require_once __DIR__ . '/includes/search_modal.php'; ?>
 
+<?php
+$frontendServiceCategories = get_frontend_service_categories();
+$frontendServiceImages = [
+	'img/services-1.jpg',
+	'img/services-2.jpg',
+	'img/services-3.jpg',
+	'img/services-4.jpg',
+	'img/services-5.jpg',
+	'img/services-6.jpg',
+	'img/services-3.jpg',
+	'img/services-1.jpg',
+];
+$frontendServiceFallbackText = "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy";
+?>
 
 
 
@@ -43,159 +57,78 @@ require_once __DIR__ . '/includes/head.php';
                     <h1 class="display-3">Spa & Beauty Services</h1>
                 </div>
                 <div class="row g-4">
-                    <div class="col-lg-6">
-                        <div class="services-item bg-light border-4 border-end border-primary rounded p-4">
+<?php foreach ($frontendServiceCategories as $categoryIndex => $category): ?>
+<?php
+	$isEvenTile = $categoryIndex % 2 === 0;
+	$isHiddenTile = $categoryIndex >= 8;
+	$imagePath = $frontendServiceImages[$categoryIndex % count($frontendServiceImages)];
+	$categoryDescription = trim((string) ($category['description'] ?? ''));
+	$categoryDescription = $categoryDescription !== '' ? $categoryDescription : $frontendServiceFallbackText;
+?>
+                    <div class="col-lg-6<?php echo $isHiddenTile ? ' frontend-extra-service-category' : ''; ?>"<?php echo $isHiddenTile ? ' style="display: none;"' : ''; ?>>
+                        <div class="services-item bg-light border-4 <?php echo $isEvenTile ? 'border-end' : 'border-start'; ?> border-primary rounded p-4">
                             <div class="row align-items-center">
+<?php if ($isEvenTile): ?>
                                 <div class="col-8">
                                     <div class="services-content text-end">
-                                        <h3>Skin Care</h3>
-                                        <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy</p>
+                                        <h3><?php echo frontend_escape((string) ($category['category_name'] ?? '')); ?></h3>
+                                        <p><?php echo frontend_escape($categoryDescription); ?></p>
                                         <a href="#" class="btn btn-primary btn-primary-outline-0 rounded-pill py-2 px-4">Make Order</a>
                                     </div>
                                 </div>
                                 <div class="col-4">
                                     <div class="services-img d-flex align-items-center justify-content-center rounded">
-                                        <img src="img/services-1.jpg" class="img-fluid rounded" alt="">
+                                        <img src="<?php echo frontend_escape($imagePath); ?>" class="img-fluid rounded" alt="">
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-6">
-                        <div class="services-item bg-light border-4 border-start border-primary rounded p-4">
-                            <div class="row align-items-center">
+<?php else: ?>
                                 <div class="col-4">
                                     <div class="services-img d-flex align-items-center justify-content-center rounded">
-                                        <img src="img/services-2.jpg" class="img-fluid rounded" alt="">
+                                        <img src="<?php echo frontend_escape($imagePath); ?>" class="img-fluid rounded" alt="">
                                     </div>
                                 </div>
                                 <div class="col-8">
                                     <div class="services-content text-start">
-                                        <h3>Face Masking</h3>
-                                        <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy</p>
+                                        <h3><?php echo frontend_escape((string) ($category['category_name'] ?? '')); ?></h3>
+                                        <p><?php echo frontend_escape($categoryDescription); ?></p>
                                         <a href="#" class="btn btn-primary btn-primary-outline-0 rounded-pill py-2 px-4">Make Order</a>
                                     </div>
                                 </div>
+<?php endif; ?>
                             </div>
                         </div>
                     </div>
-                    <div class="col-lg-6">
-                        <div class="services-item bg-light border-4 border-end border-primary rounded p-4">
-                            <div class="row align-items-center">
-                                <div class="col-8">
-                                    <div class="services-content text-end">
-                                        <h3>Stream Bath</h3>
-                                        <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy</p>
-                                        <a href="#" class="btn btn-primary btn-primary-outline-0 rounded-pill py-2 px-4">Make Order</a>
-                                    </div>
-                                </div>
-                                <div class="col-4">
-                                    <div class="services-img d-flex align-items-center justify-content-center rounded">
-                                        <img src="img/services-3.jpg" class="img-fluid rounded" alt="">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-6">
-                        <div class="services-item bg-light border-4 border-start border-primary rounded p-4">
-                            <div class="row align-items-center">
-                                <div class="col-4">
-                                    <div class="services-img d-flex align-items-center justify-content-center rounded">
-                                        <img src="img/services-4.jpg" class="img-fluid rounded" alt="">
-                                    </div>
-                                </div>
-                                <div class="col-8">
-                                    <div class="services-content text-start">
-                                        <h3>Facial Therapy</h3>
-                                        <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy</p>
-                                        <a href="#" class="btn btn-primary btn-primary-outline-0 rounded-pill py-2 px-4">Make Order</a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-6">
-                        <div class="services-item bg-light border-4 border-end border-primary rounded p-4">
-                            <div class="row align-items-center">
-                                <div class="col-8">
-                                    <div class="services-content text-end">
-                                        <h3>Body Massage</h3>
-                                        <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy</p>
-                                        <a href="#" class="btn btn-primary btn-primary-outline-0 rounded-pill py-2 px-4">Make Order</a>
-                                    </div>
-                                </div>
-                                <div class="col-4">
-                                    <div class="services-img d-flex align-items-center justify-content-center rounded">
-                                        <img src="img/services-5.jpg" class="img-fluid rounded" alt="">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-6">
-                        <div class="services-item bg-light border-4 border-start border-primary rounded p-4">
-                            <div class="row align-items-center">
-                                <div class="col-4">
-                                    <div class="services-img d-flex align-items-center justify-content-center rounded">
-                                        <img src="img/services-6.jpg" class="img-fluid rounded" alt="">
-                                    </div>
-                                </div>
-                                <div class="col-8">
-                                    <div class="services-content text-start">
-                                        <h3>Aroma Therapy</h3>
-                                        <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy</p>
-                                        <a href="#" class="btn btn-primary btn-primary-outline-0 rounded-pill py-2 px-4">Make Order</a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-6">
-                        <div class="services-item bg-light border-4 border-end border-primary rounded p-4">
-                            <div class="row align-items-center">
-                                <div class="col-8">
-                                    <div class="services-content text-end">
-                                        <h3>Mineral Baths</h3>
-                                        <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy</p>
-                                        <a href="#" class="btn btn-primary btn-primary-outline-0 rounded-pill py-2 px-4">Make Order</a>
-                                    </div>
-                                </div>
-                                <div class="col-4">
-                                    <div class="services-img d-flex align-items-center justify-content-center rounded">
-                                        <img src="img/services-3.jpg" class="img-fluid rounded" alt="">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-6">
-                        <div class="services-item bg-light border-4 border-start border-primary rounded p-4">
-                            <div class="row align-items-center">
-                                <div class="col-4">
-                                    <div class="services-img d-flex align-items-center justify-content-center rounded">
-                                        <img src="img/services-1.jpg" class="img-fluid rounded" alt="">
-                                    </div>
-                                </div>
-                                <div class="col-8">
-                                    <div class="services-content text-start">
-                                        <h3>Stone Therapy</h3>
-                                        <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy</p>
-                                        <a href="#" class="btn btn-primary btn-primary-outline-0 rounded-pill py-2 px-4">Make Order</a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+<?php endforeach; ?>
+<?php if (count($frontendServiceCategories) > 8): ?>
                     <div class="col-12">
                         <div class="services-btn text-center">
-                            <a href="#" class="btn btn-primary btn-primary-outline-0 rounded-pill py-3 px-5">Service More</a>
+                            <button type="button" id="frontend-more-services" class="btn btn-primary btn-primary-outline-0 rounded-pill py-3 px-5">More Services</button>
                         </div>
                     </div>
+<?php endif; ?>
                 </div>
             </div>
         </div>
         <!-- Services End -->
+
+<?php if (count($frontendServiceCategories) > 8): ?>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                var moreServicesButton = document.getElementById('frontend-more-services');
+
+                if (!moreServicesButton) {
+                    return;
+                }
+
+                moreServicesButton.addEventListener('click', function () {
+                    document.querySelectorAll('.frontend-extra-service-category').forEach(function (categoryTile) {
+                        categoryTile.style.display = '';
+                    });
+                    moreServicesButton.style.display = 'none';
+                });
+            });
+        </script>
+<?php endif; ?>
 
 
 

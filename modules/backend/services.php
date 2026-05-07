@@ -72,7 +72,7 @@ if (!$pdo instanceof PDO) {
 			$sql .= ' WHERE ' . implode(' AND ', $whereClauses);
 		}
 
-		$sql .= ' ORDER BY services.created_at DESC, services.id DESC';
+		$sql .= ' ORDER BY services.id ASC';
 
 		$statement = $pdo->prepare($sql);
 		$statement->execute($params);
@@ -98,6 +98,19 @@ function services_display($value): string
 require_once __DIR__ . '/includes/header.php';
 require_once __DIR__ . '/includes/topbar.php';
 ?>
+		<style>
+			.services-table-scroll {
+				max-height: 60vh;
+				overflow-y: auto;
+			}
+
+			.services-table-scroll thead th {
+				background: #f2f2f2;
+				position: sticky;
+				top: 0;
+				z-index: 2;
+			}
+		</style>
 		<div class="main-container ace-save-state" id="main-container">
 			<script type="text/javascript">
 				try{ace.settings.loadState('main-container')}catch(e){}
@@ -189,7 +202,7 @@ require_once __DIR__ . '/includes/topbar.php';
 									<?php echo services_escape($databaseError); ?>
 								</div>
 <?php else: ?>
-								<div class="table-responsive">
+								<div class="table-responsive services-table-scroll">
 									<table id="services-table" class="table table-bordered table-hover">
 										<thead>
 											<tr>

@@ -10,6 +10,7 @@ $includeAceSkins = true;
 $includeAceExtra = true;
 
 $services = [];
+$categories = [];
 $databaseError = '';
 $successMessages = [
 	'service_created' => 'Service created successfully.',
@@ -27,6 +28,7 @@ $errorMessages = [
 $successMessage = $successMessages[$_GET['success'] ?? ''] ?? '';
 $errorMessage = $errorMessages[$_GET['error'] ?? ''] ?? '';
 $searchQuery = trim((string) ($_GET['search'] ?? ''));
+$selectedCategoryId = isset($_GET['category_id']) ? (int) $_GET['category_id'] : 0;
 $currentUser = current_user();
 $isAdminUser = ($currentUser['role'] ?? '') === 'admin';
 $pdo = ace_admin_db();
@@ -35,40 +37,45 @@ if (!$pdo instanceof PDO) {
 	$databaseError = 'Unable to load services right now. Please check the database connection.';
 } else {
 	try {
-		if ($searchQuery !== '') {
-			$statement = $pdo->prepare(
-				'SELECT services.id, services.service_name, services.service_slug, services.description,
-					services.duration_minutes, services.price, services.created_at, services.updated_at,
-					service_categories.category_name, branches.branch_name
-				FROM services
-				INNER JOIN service_categories ON service_categories.id = services.service_category_id
-				INNER JOIN branches ON branches.id = services.outlet_id
-				WHERE services.service_name LIKE :search_service_name
-					OR services.service_slug LIKE :search_service_slug
-					OR services.description LIKE :search_description
-					OR service_categories.category_name LIKE :search_category_name
-					OR branches.branch_name LIKE :search_branch_name
-				ORDER BY services.created_at DESC, services.id DESC'
-			);
-			$searchTerm = '%' . $searchQuery . '%';
-			$statement->bindValue(':search_service_name', $searchTerm, PDO::PARAM_STR);
-			$statement->bindValue(':search_service_slug', $searchTerm, PDO::PARAM_STR);
-			$statement->bindValue(':search_description', $searchTerm, PDO::PARAM_STR);
-			$statement->bindValue(':search_category_name', $searchTerm, PDO::PARAM_STR);
-			$statement->bindValue(':search_branch_name', $searchTerm, PDO::PARAM_STR);
-			$statement->execute();
-		} else {
-			$statement = $pdo->query(
-				'SELECT services.id, services.service_name, services.service_slug, services.description,
-					services.duration_minutes, services.price, services.created_at, services.updated_at,
-					service_categories.category_name, branches.branch_name
-				FROM services
-				INNER JOIN service_categories ON service_categories.id = services.service_category_id
-				INNER JOIN branches ON branches.id = services.outlet_id
-				ORDER BY services.created_at DESC, services.id DESC'
-			);
+		$categoryStatement = $pdo->query(
+			'SELECT id, category_name
+			FROM service_categories
+			ORDER BY display_order ASC, id ASC'
+		);
+		$categories = $categoryStatement->fetchAll();
+
+		$whereClauses = [];
+		$params = [];
+
+		if ($selectedCategoryId > 0) {
+			$whereClauses[] = 'services.service_category_id = :category_id';
+			$params['category_id'] = $selectedCategoryId;
 		}
 
+		if ($searchQuery !== '') {
+			$whereClauses[] = '(services.service_name LIKE :search_service_name
+				OR services.service_slug LIKE :search_service_slug
+				OR services.description LIKE :search_description
+				OR service_categories.category_name LIKE :search_category_name)';
+			$searchTerm = '%' . $searchQuery . '%';
+			$params['search_service_name'] = $searchTerm;
+			$params['search_service_slug'] = $searchTerm;
+			$params['search_description'] = $searchTerm;
+			$params['search_category_name'] = $searchTerm;
+		}
+
+		$sql = 'SELECT services.id, services.service_name, services.price, service_categories.category_name
+			FROM services
+			INNER JOIN service_categories ON service_categories.id = services.service_category_id';
+
+		if (!empty($whereClauses)) {
+			$sql .= ' WHERE ' . implode(' AND ', $whereClauses);
+		}
+
+		$sql .= ' ORDER BY services.created_at DESC, services.id DESC';
+
+		$statement = $pdo->prepare($sql);
+		$statement->execute($params);
 		$services = $statement->fetchAll();
 	} catch (PDOException $exception) {
 		error_log('Services query failed: ' . $exception->getMessage());
@@ -143,11 +150,27 @@ require_once __DIR__ . '/includes/topbar.php';
 <?php endif; ?>
 
 								<div class="clearfix">
-									<form class="form-search pull-left" method="GET" action="services.php">
+									<form class="form-inline pull-left" method="GET" action="services.php">
 										<span class="input-icon">
 											<input type="text" name="search" class="nav-search-input" placeholder="Search services ..." value="<?php echo services_escape($searchQuery); ?>" autocomplete="off" />
 											<i class="ace-icon fa fa-search nav-search-icon"></i>
 										</span>
+										<select name="category_id" class="form-control input-sm">
+											<option value="0">All Categories</option>
+<?php foreach ($categories as $category): ?>
+<?php $categoryId = (int) ($category['id'] ?? 0); ?>
+											<option value="<?php echo services_escape($categoryId); ?>"<?php echo $selectedCategoryId === $categoryId ? ' selected' : ''; ?>>
+												<?php echo services_escape(services_display($category['category_name'] ?? '')); ?>
+											</option>
+<?php endforeach; ?>
+										</select>
+										<button type="submit" class="btn btn-sm btn-primary">
+											<i class="ace-icon fa fa-filter"></i>
+											Select Category
+										</button>
+<?php if ($searchQuery !== '' || $selectedCategoryId > 0): ?>
+										<a href="services.php" class="btn btn-sm btn-default">Reset</a>
+<?php endif; ?>
 									</form>
 
 <?php if ($isAdminUser): ?>
@@ -173,11 +196,7 @@ require_once __DIR__ . '/includes/topbar.php';
 												<th>ID</th>
 												<th>Service Name</th>
 												<th>Category</th>
-												<th>Outlet</th>
-												<th>Duration</th>
 												<th>Price</th>
-												<th>Created At</th>
-												<th>Updated At</th>
 												<th>Actions</th>
 											</tr>
 										</thead>
@@ -185,27 +204,16 @@ require_once __DIR__ . '/includes/topbar.php';
 										<tbody>
 <?php if (empty($services)): ?>
 											<tr>
-												<td colspan="9" class="center">No services found.</td>
+												<td colspan="5" class="center">No services found.</td>
 											</tr>
 <?php else: ?>
 <?php foreach ($services as $service): ?>
 <?php $serviceId = (int) ($service['id'] ?? 0); ?>
 											<tr>
 												<td><?php echo services_escape($serviceId); ?></td>
-												<td>
-													<strong><?php echo services_escape(services_display($service['service_name'] ?? '')); ?></strong>
-													<div class="text-muted"><?php echo services_escape(services_display($service['service_slug'] ?? '')); ?></div>
-<?php if (trim((string) ($service['description'] ?? '')) !== ''): ?>
-													<div class="space-2"></div>
-													<?php echo nl2br(services_escape($service['description'])); ?>
-<?php endif; ?>
-												</td>
+												<td><strong><?php echo services_escape(services_display($service['service_name'] ?? '')); ?></strong></td>
 												<td><?php echo services_escape(services_display($service['category_name'] ?? '')); ?></td>
-												<td><?php echo services_escape(services_display($service['branch_name'] ?? '')); ?></td>
-												<td><?php echo services_escape((int) ($service['duration_minutes'] ?? 0)); ?> min</td>
 												<td><?php echo services_escape(number_format((float) ($service['price'] ?? 0), 2)); ?></td>
-												<td><?php echo services_escape(services_display($service['created_at'] ?? '')); ?></td>
-												<td><?php echo services_escape(services_display($service['updated_at'] ?? '')); ?></td>
 												<td>
 <?php if ($isAdminUser): ?>
 													<a href="service_form.php?id=<?php echo services_escape($serviceId); ?>" class="btn btn-xs btn-info">

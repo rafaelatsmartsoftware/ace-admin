@@ -20,6 +20,7 @@ require_once __DIR__ . '/includes/head.php';
 
 <?php
 $frontendServiceCategories = get_frontend_service_categories();
+$frontendServicesByCategory = get_frontend_services_by_category();
 $frontendServiceImages = [
 	'img/services-1.jpg',
 	'img/services-2.jpg',
@@ -59,11 +60,13 @@ $frontendServiceFallbackText = "Lorem Ipsum is simply dummy text of the printing
                 <div class="row g-4">
 <?php foreach ($frontendServiceCategories as $categoryIndex => $category): ?>
 <?php
+	$categoryId = isset($category['id']) ? (int) $category['id'] : 0;
 	$isEvenTile = $categoryIndex % 2 === 0;
 	$isHiddenTile = $categoryIndex >= 8;
 	$imagePath = $frontendServiceImages[$categoryIndex % count($frontendServiceImages)];
 	$categoryDescription = trim((string) ($category['description'] ?? ''));
 	$categoryDescription = $categoryDescription !== '' ? $categoryDescription : $frontendServiceFallbackText;
+	$categoryModalId = 'frontend-service-category-modal-' . ($categoryId > 0 ? $categoryId : $categoryIndex + 1);
 ?>
                     <div class="col-lg-6<?php echo $isHiddenTile ? ' frontend-extra-service-category' : ''; ?>"<?php echo $isHiddenTile ? ' style="display: none;"' : ''; ?>>
                         <div class="services-item bg-light border-4 <?php echo $isEvenTile ? 'border-end' : 'border-start'; ?> border-primary rounded p-4">
@@ -73,7 +76,7 @@ $frontendServiceFallbackText = "Lorem Ipsum is simply dummy text of the printing
                                     <div class="services-content text-end">
                                         <h3><?php echo frontend_escape((string) ($category['category_name'] ?? '')); ?></h3>
                                         <p><?php echo frontend_escape($categoryDescription); ?></p>
-                                        <a href="#" class="btn btn-primary btn-primary-outline-0 rounded-pill py-2 px-4">Make Order</a>
+                                        <button type="button" class="btn btn-primary btn-primary-outline-0 rounded-pill py-2 px-4" data-bs-toggle="modal" data-bs-target="#<?php echo frontend_escape($categoryModalId); ?>">View Details</button>
                                     </div>
                                 </div>
                                 <div class="col-4">
@@ -91,7 +94,7 @@ $frontendServiceFallbackText = "Lorem Ipsum is simply dummy text of the printing
                                     <div class="services-content text-start">
                                         <h3><?php echo frontend_escape((string) ($category['category_name'] ?? '')); ?></h3>
                                         <p><?php echo frontend_escape($categoryDescription); ?></p>
-                                        <a href="#" class="btn btn-primary btn-primary-outline-0 rounded-pill py-2 px-4">Make Order</a>
+                                        <button type="button" class="btn btn-primary btn-primary-outline-0 rounded-pill py-2 px-4" data-bs-toggle="modal" data-bs-target="#<?php echo frontend_escape($categoryModalId); ?>">View Details</button>
                                     </div>
                                 </div>
 <?php endif; ?>
@@ -110,6 +113,45 @@ $frontendServiceFallbackText = "Lorem Ipsum is simply dummy text of the printing
             </div>
         </div>
         <!-- Services End -->
+
+<?php foreach ($frontendServiceCategories as $categoryIndex => $category): ?>
+<?php
+	$categoryId = isset($category['id']) ? (int) $category['id'] : 0;
+	$categoryModalId = 'frontend-service-category-modal-' . ($categoryId > 0 ? $categoryId : $categoryIndex + 1);
+	$categoryServices = $categoryId > 0 ? ($frontendServicesByCategory[$categoryId] ?? []) : [];
+?>
+        <div class="modal fade" id="<?php echo frontend_escape($categoryModalId); ?>" tabindex="-1" aria-labelledby="<?php echo frontend_escape($categoryModalId); ?>-label" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-xl">
+                <div class="modal-content border-0 rounded-4 overflow-hidden">
+                    <div class="modal-header bg-primary text-white border-0 px-4 py-3">
+                        <h5 class="modal-title text-white mb-0" id="<?php echo frontend_escape($categoryModalId); ?>-label"><?php echo frontend_escape((string) ($category['category_name'] ?? '')); ?></h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-4 bg-light">
+<?php if (!empty($categoryServices)): ?>
+                        <div class="row g-4">
+<?php foreach ($categoryServices as $service): ?>
+                            <div class="col-sm-6 col-lg-4">
+                                <div class="bg-white border-top border-4 border-primary rounded p-4 h-100 shadow-sm">
+                                    <h5 class="mb-4"><?php echo frontend_escape((string) ($service['service_name'] ?? '')); ?></h5>
+                                    <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap">
+                                        <span class="fw-bold text-primary fs-5">BDT <?php echo frontend_escape(number_format((float) ($service['price'] ?? 0), 2)); ?></span>
+                                        <a href="appointment.php?service_id=<?php echo frontend_escape((string) ((int) ($service['id'] ?? 0))); ?>" class="btn btn-primary btn-primary-outline-0 rounded-pill py-2 px-4">Book Now</a>
+                                    </div>
+                                </div>
+                            </div>
+<?php endforeach; ?>
+                        </div>
+<?php else: ?>
+                        <div class="text-center py-4">
+                            <p class="mb-0">No services available for this category.</p>
+                        </div>
+<?php endif; ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+<?php endforeach; ?>
 
 <?php if (count($frontendServiceCategories) > 8): ?>
         <script>

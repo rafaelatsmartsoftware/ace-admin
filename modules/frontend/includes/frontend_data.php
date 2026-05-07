@@ -161,3 +161,53 @@ function get_frontend_service_categories(): array
 
 	return $categories;
 }
+
+function get_frontend_services_by_category(): array
+{
+	static $servicesByCategory = null;
+
+	if (is_array($servicesByCategory)) {
+		return $servicesByCategory;
+	}
+
+	$servicesByCategory = [];
+	$pdo = ace_admin_db();
+
+	if (!$pdo instanceof PDO) {
+		return $servicesByCategory;
+	}
+
+	try {
+		$statement = $pdo->prepare(
+			'SELECT id, service_name, price, service_category_id
+			FROM services
+			ORDER BY service_category_id ASC, id ASC'
+		);
+		$statement->execute();
+		$rows = $statement->fetchAll();
+	} catch (PDOException $exception) {
+		error_log('Frontend services query failed: ' . $exception->getMessage());
+		return $servicesByCategory;
+	}
+
+	foreach ($rows as $row) {
+		$categoryId = isset($row['service_category_id']) ? (int) $row['service_category_id'] : 0;
+
+		if ($categoryId <= 0) {
+			continue;
+		}
+
+		if (!isset($servicesByCategory[$categoryId])) {
+			$servicesByCategory[$categoryId] = [];
+		}
+
+		$servicesByCategory[$categoryId][] = [
+			'id' => isset($row['id']) ? (int) $row['id'] : 0,
+			'service_name' => (string) ($row['service_name'] ?? ''),
+			'price' => isset($row['price']) ? (float) $row['price'] : 0.0,
+			'service_category_id' => $categoryId,
+		];
+	}
+
+	return $servicesByCategory;
+}

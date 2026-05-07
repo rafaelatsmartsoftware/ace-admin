@@ -7,6 +7,10 @@ $frontendBranches = get_frontend_branches();
 $frontendServiceCategories = get_frontend_service_categories();
 $frontendServicesByCategory = get_frontend_services_grouped_by_category();
 
+$appointmentErrors = [];
+$appointmentSuccess = isset($_GET['success']) && $_GET['success'] === '1';
+$pdo = ace_admin_db();
+
 $selectedBranchId = isset($_POST['outlet_id']) ? (int) $_POST['outlet_id'] : 0;
 $selectedCategoryId = isset($_POST['service_category_id']) ? (int) $_POST['service_category_id'] : 0;
 $selectedServiceId = isset($_POST['service_id']) ? (int) $_POST['service_id'] : 0;
@@ -36,6 +40,135 @@ $guestEmail = trim((string) ($_POST['guest_email'] ?? ''));
 $appointmentDate = trim((string) ($_POST['appointment_date'] ?? ''));
 $appointmentTime = trim((string) ($_POST['appointment_time'] ?? ''));
 $notes = trim((string) ($_POST['notes'] ?? ''));
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+	if ($guestName === '') {
+		$appointmentErrors[] = 'Full Name is required.';
+	}
+
+	if ($guestPhone === '') {
+		$appointmentErrors[] = 'Phone Number is required.';
+	}
+
+	if ($selectedBranchId <= 0) {
+		$appointmentErrors[] = 'Please select a branch.';
+	}
+
+	if ($selectedCategoryId <= 0) {
+		$appointmentErrors[] = 'Please select a service category.';
+	}
+
+	if ($selectedServiceId <= 0) {
+		$appointmentErrors[] = 'Please select a service.';
+	}
+
+	if ($appointmentDate === '') {
+		$appointmentErrors[] = 'Appointment Date is required.';
+	}
+
+	if ($appointmentTime === '') {
+		$appointmentErrors[] = 'Appointment Time is required.';
+	}
+
+	if ($guestEmail !== '' && !filter_var($guestEmail, FILTER_VALIDATE_EMAIL)) {
+		$appointmentErrors[] = 'Please enter a valid email address.';
+	}
+
+	$today = new DateTimeImmutable('today');
+	$dateObject = DateTimeImmutable::createFromFormat('Y-m-d', $appointmentDate);
+	$dateErrors = DateTimeImmutable::getLastErrors();
+	$dateWarningCount = is_array($dateErrors) ? (int) ($dateErrors['warning_count'] ?? 0) : 0;
+	$dateErrorCount = is_array($dateErrors) ? (int) ($dateErrors['error_count'] ?? 0) : 0;
+
+	if ($appointmentDate !== '' && (!$dateObject || $dateWarningCount > 0 || $dateErrorCount > 0)) {
+		$appointmentErrors[] = 'Please select a valid appointment date.';
+	} elseif ($dateObject instanceof DateTimeImmutable && $dateObject < $today) {
+		$appointmentErrors[] = 'Appointment date cannot be in the past.';
+	}
+
+	$timeObject = DateTimeImmutable::createFromFormat('H:i', $appointmentTime);
+	$timeErrors = DateTimeImmutable::getLastErrors();
+	$timeWarningCount = is_array($timeErrors) ? (int) ($timeErrors['warning_count'] ?? 0) : 0;
+	$timeErrorCount = is_array($timeErrors) ? (int) ($timeErrors['error_count'] ?? 0) : 0;
+
+	if ($appointmentTime !== '' && (!$timeObject || $timeWarningCount > 0 || $timeErrorCount > 0)) {
+		$appointmentErrors[] = 'Please select a valid appointment time.';
+	}
+
+	if (!$pdo instanceof PDO) {
+		$appointmentErrors[] = 'Booking is temporarily unavailable. Please try again later.';
+	}
+
+	$validatedService = null;
+
+	if (empty($appointmentErrors) && $pdo instanceof PDO) {
+		try {
+			$branchStatement = $pdo->prepare('SELECT id FROM branches WHERE id = :id LIMIT 1');
+			$branchStatement->execute(['id' => $selectedBranchId]);
+
+			if (!$branchStatement->fetch()) {
+				$appointmentErrors[] = 'Selected branch is not available.';
+			}
+
+			$categoryStatement = $pdo->prepare('SELECT id FROM service_categories WHERE id = :id LIMIT 1');
+			$categoryStatement->execute(['id' => $selectedCategoryId]);
+
+			if (!$categoryStatement->fetch()) {
+				$appointmentErrors[] = 'Selected service category is not available.';
+			}
+
+			$serviceStatement = $pdo->prepare(
+				'SELECT id, service_category_id
+				FROM services
+				WHERE id = :id
+				LIMIT 1'
+			);
+			$serviceStatement->execute(['id' => $selectedServiceId]);
+			$validatedService = $serviceStatement->fetch();
+
+			if (!$validatedService) {
+				$appointmentErrors[] = 'Selected service is not available.';
+			} elseif ((int) ($validatedService['service_category_id'] ?? 0) !== $selectedCategoryId) {
+				$appointmentErrors[] = 'Selected service does not belong to the chosen category.';
+			}
+		} catch (PDOException $exception) {
+			error_log('Frontend appointment validation failed: ' . $exception->getMessage());
+			$appointmentErrors[] = 'We could not validate your booking right now. Please try again later.';
+		}
+	}
+
+	if (empty($appointmentErrors) && $pdo instanceof PDO && is_array($validatedService)) {
+		try {
+			$insertStatement = $pdo->prepare(
+				'INSERT INTO bookings
+				(booking_type, customer_id, guest_name, guest_phone, guest_email, outlet_id, service_id, employee_id, appointment_date, appointment_time, booking_status, payment_method, notes)
+				VALUES
+				(:booking_type, :customer_id, :guest_name, :guest_phone, :guest_email, :outlet_id, :service_id, :employee_id, :appointment_date, :appointment_time, :booking_status, :payment_method, :notes)'
+			);
+			$insertStatement->execute([
+				'booking_type' => 'guest',
+				'customer_id' => null,
+				'guest_name' => $guestName,
+				'guest_phone' => $guestPhone,
+				'guest_email' => $guestEmail !== '' ? $guestEmail : null,
+				'outlet_id' => $selectedBranchId,
+				'service_id' => $selectedServiceId,
+				'employee_id' => null,
+				'appointment_date' => $appointmentDate,
+				'appointment_time' => $appointmentTime,
+				'booking_status' => 'pending',
+				'payment_method' => 'pay_at_salon',
+				'notes' => $notes !== '' ? $notes : null,
+			]);
+
+			header('Location: appointment.php?success=1');
+			exit;
+		} catch (PDOException $exception) {
+			error_log('Frontend appointment insert failed: ' . $exception->getMessage());
+			$appointmentErrors[] = 'We could not submit your appointment right now. Please try again later.';
+		}
+	}
+}
 
 $frontendServicesJson = [];
 
@@ -92,6 +225,20 @@ foreach ($frontendServicesByCategory as $categoryId => $services) {
                         <div class="appointment-form p-5">
                             <p class="fs-4 text-uppercase text-primary">Get In Touch</p>
                             <h1 class="display-4 mb-4 text-white">Get Appointment</h1>
+<?php if ($appointmentSuccess): ?>
+                            <div class="alert alert-success mb-4" role="alert">
+                                Your appointment request has been submitted successfully. We will contact you soon.
+                            </div>
+<?php endif; ?>
+<?php if (!empty($appointmentErrors)): ?>
+                            <div class="alert alert-danger mb-4" role="alert">
+                                <ul class="mb-0 ps-3">
+<?php foreach ($appointmentErrors as $appointmentError): ?>
+                                    <li><?php echo frontend_escape($appointmentError); ?></li>
+<?php endforeach; ?>
+                                </ul>
+                            </div>
+<?php endif; ?>
                             <form method="post" action="">
                                 <input type="hidden" name="booking_type" value="guest">
                                 <input type="hidden" name="booking_status" value="pending">
